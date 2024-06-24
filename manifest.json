@@ -1,0 +1,61 @@
+{
+  "manifest_version": 3,
+  "name": "Trusted Types Helper",
+  "description": "Identify and resolve Trusted Types violations easily!",
+  "version": "1.0",
+  "action": {
+    "default_popup": "hello.html"
+  },
+  "devtools_page": "devtools.html",
+  "content_scripts": [
+    {
+      "matches": [
+        "<all_urls>"
+      ],
+      "js": [
+        "src/content.js"
+      ],
+      "run_at": "document_start",
+      "world": "MAIN"
+    },
+    {
+      "matches": [
+        "<all_urls>"
+      ],
+      "js": [
+        "src/listen.js"
+      ],
+      "run_at": "document_start",
+      "world": "ISOLATED"
+    }
+  ],
+  "permissions": [
+    "declarativeNetRequest",
+    "declarativeNetRequestFeedback",
+    "declarativeNetRequestWithHostAccess"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  "declarative_net_request": {
+    "rule_resources": [
+      {
+        "id": "tt_headers",
+        "enabled": true,
+        "path": "src/tt_headers.json"
+      }
+    ]
+  },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'; require-trusted-types-for 'script';"
+  },
+  "externally_connectable": {
+    "matches": [
+      "<all_urls>"
+    ]
+  },
+  "background": {
+    "service_worker": "dist/service_worker.js",
+    "type": "module"
+  }
+}

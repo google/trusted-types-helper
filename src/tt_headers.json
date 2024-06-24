@@ -1,0 +1,21 @@
+[
+  {
+    "id": 1,
+    "priority": 1,
+    "condition": {
+      "resourceTypes": [
+        "main_frame"
+      ]
+    },
+    "action": {
+      "responseHeaders": [
+        {
+          "header": "Content-Security-Policy-Report-Only",
+          "operation": "append",
+          "value": "require-trusted-types-for 'script';"
+        }
+      ],
+      "type": "modifyHeaders"
+    }
+  }
+]

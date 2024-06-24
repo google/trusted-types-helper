@@ -1,0 +1,18 @@
+{
+  "name": "trusted-types-helper",
+  "version": "1.0.0",
+  "description": "",
+  "scripts": {
+    "build": "(cd ui && ng build) && (cd background && tsc)",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@angular/cli": "^17.3.7",
+    "typescript": "^5.4.5"
+  },
+  "dependencies": {
+    "@types/chrome": "^0.0.268"
+  }
+}
