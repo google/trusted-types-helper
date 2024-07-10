@@ -19,4 +19,17 @@
 * when it loads it asks the service worker for all the violation data it's seen so far
 
 ## To build/run
-* There's a package.json at the top level, run `npm run build` to build the extension
+* Run `npm install` on the top-level directory.
+* Navigate to the directory `ui` and run `npm install` again (to install Angular
+  dependencies only used for the UI folder).
+* There's a package.json at the top level, run `npm run build` there to build the extension
+
+In summary, the commands to build and run are:
+
+```bash
+npm install
+cd ui
+npm install
+cd ..
+npm run build
+```
