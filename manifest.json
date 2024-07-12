@@ -32,20 +32,12 @@
   "permissions": [
     "declarativeNetRequest",
     "declarativeNetRequestFeedback",
-    "declarativeNetRequestWithHostAccess"
+    "declarativeNetRequestWithHostAccess",
+     "webRequest"
   ],
   "host_permissions": [
     "<all_urls>"
   ],
-  "declarative_net_request": {
-    "rule_resources": [
-      {
-        "id": "tt_headers",
-        "enabled": true,
-        "path": "src/tt_headers.json"
-      }
-    ]
-  },
   "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'self'; require-trusted-types-for 'script';"
   },
@@ -55,7 +47,7 @@
     ]
   },
   "background": {
-    "service_worker": "dist/service_worker.js",
+    "service_worker": "dist/background/service_worker.js",
     "type": "module"
   }
 }
