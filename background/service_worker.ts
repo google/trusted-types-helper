@@ -29,6 +29,9 @@ chrome.runtime.onMessage.addListener((msg: Message, sender, sendResponse) => {
     case 'defaultPolicyCreationFailed':
       defaultPolicyData.creationFailed = msg.defaultPolicyCreationFailed;
       break;
+    case 'defaulPolicyOverwriteFailed':
+      defaultPolicyData.overwriteFailed = msg.defaulPolicyOverwriteFailed;
+      break;
     case 'getDefaultPolicyData':
       sendResponse(defaultPolicyData);
       break;

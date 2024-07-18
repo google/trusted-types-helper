@@ -1,6 +1,7 @@
 export interface DefaultPolicyData {
     wasSet?: Date;
     creationFailed?: Date;
+    overwriteFailed ?: Date;
 };
 
 export type ViolationType = 'HTML' | 'Script' | 'URL';
@@ -36,10 +37,11 @@ export class Violations implements ViolationDataType {
 }
 
 export interface Message {
-    type: 'violation' | 'listViolations' | 'defaultPolicySet' | 'defaultPolicyCreationFailed' | 
-          'getDefaultPolicyData';
+    type: 'violation' | 'listViolations' | 'defaultPolicySet' | 'defaultPolicyCreationFailed' |
+        'defaulPolicyOverwriteFailed' | 'getDefaultPolicyData';
     violation?: Violation;
     defaultPolicySet?: Date;
     defaultPolicyCreationFailed?: Date;
+    defaulPolicyOverwriteFailed?: Date;
   }
 

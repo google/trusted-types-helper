@@ -22,18 +22,19 @@ export class AppComponent {
   ngOnInit() {
     console.log('OnInit');
     (async () => {
-
       const response = await chrome.runtime.sendMessage({type: "listViolations"});
       // do something with response here, not outside the function
     })();
-
-    // Send message asking for the last time the default policy was overwritten
+    // Send message requesting default policy data
     (async () => {
       const defaultPolicyData : DefaultPolicyData =
                         await chrome.runtime.sendMessage({type: "getDefaultPolicyData"});
       if (defaultPolicyData.creationFailed) {
         this.isSuccess = false;
         this.message = 'Default policy creation failed.';
+      } else if (defaultPolicyData.overwriteFailed) {
+        this.isSuccess = false;
+        this.message = "Failed to overwrite the extension's default policy."
       } else if (defaultPolicyData.wasSet) {
         this.isSuccess = true;
         this.message = 'Default policy was created.' ;

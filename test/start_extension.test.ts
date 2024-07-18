@@ -79,6 +79,38 @@ test('Extension DevTools Panel loads properly', async () => {
   expect(panelBodyContent).toContain("MAGIC BUTTON");
 }, TEST_TIMEOUT);
 
+test('Extension Dev Tools Panel shows Default Policy created messsage', async () => {
+  await page?.goto(DEV_SERVER, PUPPETEER_NAVIGATION_OPTS);
+
+  if (!browser || !extensionId) {
+    fail('Did not initialize the browser and the extension properly.');
+  }
+  const panel = await openDevToolsPanel(browser, extensionId, x => fail(x));
+
+  // Get the text of the message box
+  const element = await panel.$('.message-box.success');
+  const elementText  = await element?.evaluate(el => el.textContent);
+
+  expect(elementText).toBe("Default policy was created.");
+}, TEST_TIMEOUT);
+
+
+test("Extension Dev Tools Panel shows failed to overwrite extension's default policy message", async () => {
+  const dev_server_with_defaultPolicy = DEV_SERVER.concat('/?defaultPolicy=true');
+  await page?.goto(dev_server_with_defaultPolicy, PUPPETEER_NAVIGATION_OPTS);
+
+  if (!browser || !extensionId) {
+    fail('Did not initialize the browser and the extension properly.');
+  }
+  const panel = await openDevToolsPanel(browser, extensionId, x => fail(x));
+
+  // Get the text of the message box
+  const element = await panel.$('.message-box.error');
+  const elementText  = await element?.evaluate(el => el.textContent);
+
+  expect(elementText).toBe("Failed to overwrite the extension's default policy.");
+}, TEST_TIMEOUT);
+
 test('Extension popup content loads properly', async () => {
   await page?.goto(DEV_SERVER, PUPPETEER_NAVIGATION_OPTS);
   const popup = await browser?.newPage();

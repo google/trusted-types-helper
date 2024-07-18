@@ -31,9 +31,16 @@ const server = http.createServer((req, res) => {
     }
     if (query.meta) {
       dataString = dataString.replace('Trusted Types meta tags', 'Trusted Types meta tags \u2611')
-      dataString = dataString.replace('<head>', `<head><meta http-equiv="Content-Security-Policy" content="require-trusted-types-for 'script';">`)
+      dataString = dataString.replace('<head>',
+        `<head><meta http-equiv="Content-Security-Policy" content="require-trusted-types-for 'script';">`)
     }
-    // TODO: Default policy and violation insertion too.
+    if (query.defaultPolicy) {
+      dataString = dataString.replace('Trusted Types default policies', 'Trusted Types default policies \u2611');
+      dataString  = dataString.replace('<head>',
+        '<head><script>if (window.trustedTypes) { window.trustedTypes.createPolicy("default", {createHTML: (string => {return string;}), createScript: (string => {return string;}), createScriptURL: (string => {return string;})});}</script>');
+    }
+
+    // TODO: Violation insertion too.
 
     res.writeHead(200, headers);
 
