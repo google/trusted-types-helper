@@ -8,7 +8,7 @@
     "test-page": "node test/test_server.js"
   },
   "author": "",
-  "license": "ISC",
+  "license": "Apache-2.0",
   "devDependencies": {
     "@angular/cli": "^18.0.5",
     "@types/jest": "^29.5.12",
