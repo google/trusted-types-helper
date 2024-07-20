@@ -15,7 +15,7 @@
  */
 
 /// <reference types="chrome"/>
-import {DefaultPolicyData, Message, Violation, Violations} from "../common/common.js";
+import {DefaultPolicyData, Message, Violation, Violations} from "../common/common";
 
 const CSP_HEADER = 'content-security-policy';
 const CSP_HEADER_REPORT_ONLY = 'Content-Security-Policy-Report-Only';

@@ -52,6 +52,14 @@ cd ui
 npm run test
 ```
 
+Alternatively, from the top-level of this repo, you can run:
+
+```bash
+npm run test:ng
+```
+
+The test files are in the same directory as the components (for example, `src/app/app.component.spec.ts`).
+
 ### Integration tests
 
 ```bash
