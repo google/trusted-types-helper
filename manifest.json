@@ -13,7 +13,7 @@
         "<all_urls>"
       ],
       "js": [
-        "src/content.js"
+        "dist/content.js"
       ],
       "run_at": "document_start",
       "world": "MAIN"
@@ -23,7 +23,7 @@
         "<all_urls>"
       ],
       "js": [
-        "src/listen.js"
+        "dist/listen.js"
       ],
       "run_at": "document_start",
       "world": "ISOLATED"
@@ -47,7 +47,7 @@
     ]
   },
   "background": {
-    "service_worker": "dist/background/service_worker.js",
+    "service_worker": "dist/service_worker.js",
     "type": "module"
   }
 }

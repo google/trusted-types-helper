@@ -3,8 +3,13 @@
   "version": "1.0.0",
   "description": "",
   "scripts": {
-    "build": "(cd ui && ng build) && (cd background && tsc)",
-    "test": "(cd ui && ng build) && (cd background && tsc) && jest test/",
+    "build:clean": "rm -r dist/",
+    "build:ui": "cd ui && ng build",
+    "build:service_worker": "cd background && tsc service_worker.ts --strict --noEmit && esbuild service_worker.ts --bundle --tsconfig=../tsconfig.json --outdir=../dist",
+    "build:content_script": "cd src && tsc content.ts devtools.ts listen.ts --strict --noEmit && esbuild content.ts devtools.ts listen.ts --bundle --tsconfig=../tsconfig.json --outdir=../dist",
+    "build": "npm run build:clean && npm run build:ui && npm run build:service_worker && npm run build:content_script",
+    "test:ng": "cd ui && ng test",
+    "test": "npm run build && jest test/",
     "test-page": "node test/test_server.js"
   },
   "author": "",
@@ -12,6 +17,7 @@
   "devDependencies": {
     "@angular/cli": "^18.0.5",
     "@types/jest": "^29.5.12",
+    "esbuild": "^0.23.0",
     "jest": "^29.7.0",
     "jest-dev-server": "^10.0.0",
     "jest-puppeteer": "^10.0.1",
@@ -20,6 +26,7 @@
     "typescript": "^5.4.5"
   },
   "dependencies": {
-    "@types/chrome": "^0.0.268"
+    "@types/chrome": "^0.0.268",
+    "@types/trusted-types": "^2.0.7"
   }
 }

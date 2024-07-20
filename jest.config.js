@@ -17,14 +17,15 @@
 /** @type {import('ts-jest').JestConfigWithTsJest} **/
 module.exports = {
   preset: "jest-puppeteer",
-  testEnvironment: "node",
+  testEnvironment: 'node',
   transform: {
-    "^.+.tsx?$": ["ts-jest", {
-      'tsconfig': {
-        esModuleInterop: true,
-      }
-    }],
+    '^.+.tsx?$': [
+      'ts-jest',
+      {
+        tsconfig: '<rootDir>/tsconfig.jest.json'
+      },
+    ],
   },
-  globalSetup: "<rootDir>/test/globalSetup.ts",
-  globalTeardown: "<rootDir>/test/globalTeardown.ts",
+  globalSetup: '<rootDir>/test/globalSetup.ts',
+  globalTeardown: '<rootDir>/test/globalTeardown.ts',
 };

@@ -15,8 +15,18 @@
  */
 
 /**
- * @fileoverview Description of this file.
+ * @fileoverview Content Script to load before any of the JS on the page in order to inject a default Trusted Types policy to introspect all DOM Sink values.
  */
+
+/// <reference types="chrome"/>
+/// <reference types="trusted-types" />
+import { Violations } from '../common/common';
+import { TrustedTypesWindow } from 'trusted-types/lib';
+
+// Let's make sure that the common types import properly.
+// TODO(mayrarobles): Remove this and use more useful things from '../common/common' to make this code more robust.
+const violations : Violations = new Violations();
+console.log(JSON.stringify(violations));
 
 // Alert when there is an error in case the user already has a default policy,
 // the extension policy may be set first and when the user's default policy
@@ -27,15 +37,18 @@ addEventListener("error", (event) => {
       type: 'defaulPolicyOverwriteFailed',
       defaulPolicyOverwriteFailed: Date.now()
     }
-    debugger;
     window.postMessage(msg, '*');
     alert("Failed to overwrite the default policy set by the Trusted Types Helper extension.");
   }
 });
 
 try {
-  self.trustedTypes.createPolicy('default', {
-    createHTML: (string => {
+  const tt = (self as unknown as TrustedTypesWindow).trustedTypes;
+  if (!tt) {
+    throw new Error("Browser does not support Trusted Types");
+  }
+  tt.createPolicy('default', {
+    createHTML: string => {
       //TODO implement default policy processing/sanitizing
       console.log(string);
 
@@ -50,17 +63,21 @@ try {
 
       window.postMessage(msg, '*');
       return string;
-    })
+    }
   });
 } catch(error) {
-  console.error('Trusted Types Default Policy Creation Failed:', error.message);
-  const msg = {
-    type: 'defaultPolicyCreationFailed',
-    defaultPolicyCreationFailed: Date.now()
+  // Although JavaScript allows you to throw any value (including not Error's), in the try-statement
+  // above, we either only fail a system call to trustedTypes.createPolicy (generating an Error) or
+  // manually throw an Error in case self.trustedTypes is not available.
+  if (error instanceof Error) {
+    console.error('Trusted Types Default Policy Creation Failed:', error.message);
+    const msg = {
+      type: 'defaultPolicyCreationFailed',
+      defaultPolicyCreationFailed: Date.now()
+    }
+    window.postMessage(msg, '*');
   }
-  window.postMessage(msg, '*');
 }
-
 
 // When page reloads, these lines will get executed
 const msg = {
