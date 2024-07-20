@@ -1,0 +1,7 @@
+# Ignore artifacts:
+dist/
+node_modules/
+ui/.angular/
+ui/.vscode/
+package-lock.json
+.vscode/
