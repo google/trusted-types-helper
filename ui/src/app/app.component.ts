@@ -18,14 +18,14 @@
 // import {chrome} from '@types/chrome';
 import { Component } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
-import { DefaultPolicyData } from "../../../common/common";
-import { NgClass } from '@angular/common';
+import { DefaultPolicyData, Message, Violations, ViolationType, Violation, ViolationDataType } from "../../../common/common";
+import { NgClass, NgFor } from '@angular/common';
 
-
+const VIOLATION_TYPES_NAMES = ['HTML', 'Script', 'URL'];
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet, NgClass],
+  imports: [RouterOutlet, NgClass, NgFor],
   templateUrl: './app.component.html',
   styleUrl: './app.component.css'
 })
@@ -33,14 +33,45 @@ export class AppComponent {
   title = 'trusted-types-helper-ui';
   message = 'No message yet.';
   isSuccess = false;
+  violationMessage = '';
+  violationMessages: Array<Array<string>>= [];
 
+  async generateViolationMessages() {
+    const response = await this.getViolationDataFromLocalStorage();
+    const violations = this.giveProperTypings(response);
+    // Loop through all violation arrays in the "violations" object
+    for (const violationsType of Object.getOwnPropertyNames(violations)) {
+      const violationArray = violations[violationsType as keyof Violations];
+      if (violationArray && Array.isArray(violationArray)) {
+        violationArray.forEach(violation => {
+          var messages = [`Violation Type: ${violation.getType()}`, `Data: ${violation.getData()}`, 
+            `Timestamp: ${violation.getTimestamp()}`];
+          this.violationMessages.push(messages);
+        });
+      }
+    }
+  }
+
+  async getViolationDataFromLocalStorage() {
+    const response = await chrome.runtime.sendMessage({type: "listViolations",
+      inspectedTabId: chrome.devtools.inspectedWindow.tabId});
+    return response;
+  }
+
+  giveProperTypings(response: ViolationDataType): Violations {
+    var violationsPerTab: Violations = new Violations;
+    for (const violationGroup of Object.getOwnPropertyNames(response)) {
+      for (const violation of response[violationGroup as keyof ViolationDataType]) {
+        const violationWithRightTyping = new Violation(violation['data'], violation['type'], violation['timestamp']);
+        violationsPerTab.addViolation(violationWithRightTyping);
+      }
+    }
+
+    return violationsPerTab;
+  }
 
   ngOnInit() {
     console.log('OnInit');
-    (async () => {
-      const response = await chrome.runtime.sendMessage({type: "listViolations"});
-      // do something with response here, not outside the function
-    })();
     // Send message requesting default policy data
     (async () => {
       const defaultPolicyData : DefaultPolicyData =

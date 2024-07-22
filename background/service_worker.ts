@@ -21,37 +21,47 @@ const CSP_HEADER = 'content-security-policy';
 const CSP_HEADER_REPORT_ONLY = 'Content-Security-Policy-Report-Only';
 const TRUSTED_TYPES_DIRECTIVE =  "require-trusted-types-for 'script'";
 
-var violations : Violations= new Violations();
 var defaultPolicyData: DefaultPolicyData = {};
-
+var violationsPerTab: Record<string, Violations> = {};
 
 // Listens to the content script
-chrome.runtime.onMessage.addListener((msg: Message, sender, sendResponse) => {
-  console.log(msg);
-  console.log(sender.tab?.url);
-
+chrome.runtime.onMessage.addListener((msg: any, sender, sendResponse) => {
   switch (msg.type) {
-    case 'violation':
-      if (msg.violation)  {
-        violations[msg.violation.getType()].push(msg.violation);
+    case 'violationFound':
+      if (msg.violation && sender.tab && sender.tab.id) {
+        const activeTabId = sender.tab.id;
+        if (!(activeTabId in violationsPerTab)) {
+          // Add an empty space in violationsPerTab for this tab id
+          violationsPerTab[activeTabId] = new Violations();
+        }
+        // Create violation object
+        var violation = new Violation(msg.violation.data, msg.violation.type, msg.violation.timestamp);
+        // Add a violation to the corresponding tab id
+        violationsPerTab[activeTabId].addViolation(violation);
+        // Store all violations for all tabs in local storage
+        chrome.storage.local.set(violationsPerTab);
       }
       break;
     case 'listViolations':
-      sendResponse({ violations });
-      break;
+      if (msg.inspectedTabId) {
+        chrome.storage.local.get(msg.inspectedTabId.toString(),  (result) => {
+          sendResponse(result[msg.inspectedTabId]);
+        });
+      }
+     return true;
     case 'defaultPolicySet':
       defaultPolicyData.wasSet = msg.defaultPolicySet;
       break;
     case 'defaultPolicyCreationFailed':
       defaultPolicyData.creationFailed = msg.defaultPolicyCreationFailed;
       break;
-    case 'defaulPolicyOverwriteFailed':
-      defaultPolicyData.overwriteFailed = msg.defaulPolicyOverwriteFailed;
+    case 'defaultPolicyOverwriteFailed':
+      defaultPolicyData.overwriteFailed = msg.defaultPolicyOverwriteFailed;
       break;
     case 'getDefaultPolicyData':
       sendResponse(defaultPolicyData);
       break;
-  }
+    }
 });
 
 if (chrome.webRequest !== undefined) {
