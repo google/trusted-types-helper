@@ -18,7 +18,7 @@ export interface DefaultPolicyData {
     wasSet?: Date;
     creationFailed?: Date;
     overwriteFailed ?: Date;
-};
+}
 
 export type ViolationType = 'HTML' | 'Script' | 'URL';
 
@@ -33,14 +33,14 @@ export class Violation {
         this.timestamp = timestamp;
     }
 
-    public getData() { return this.data; }
+    public getData(): string { return this.data; }
 
-    public getType() { return this.type; }
+    public getType(): ViolationType { return this.type; }
 
-    public getTimestamp() { return this.timestamp; }
+    public getTimestamp(): Date { return this.timestamp; }
 }
 
-type ViolationDataType = {
+export type ViolationDataType = {
     [key in ViolationType] : Array<Violation>;
 };
 
@@ -49,15 +49,32 @@ export class Violations implements ViolationDataType {
     public Script: Array<Violation> = [];
     public URL: Array<Violation> = [];
 
-    constructor () {}
+    constructor() {}
+
+    public addViolation(violation: Violation) {
+        switch (violation.getType()) {
+            case 'HTML':
+              this.HTML.push(violation);
+              break;
+            case 'Script':
+              this.Script.push(violation);
+              break;
+            case 'URL':
+              this.URL.push(violation);
+              break;
+            default:
+              console.error(`Unknown violation type: ${violation.getType()}`);
+        }
+    }
 }
 
 export interface Message {
-    type: 'violation' | 'listViolations' | 'defaultPolicySet' | 'defaultPolicyCreationFailed' |
-        'defaulPolicyOverwriteFailed' | 'getDefaultPolicyData';
+    type: 'violationFound' | 'listViolations' | 'defaultPolicySet' | 'defaultPolicyCreationFailed' |
+        'defaultPolicyOverwriteFailed' | 'getDefaultPolicyData';
     violation?: Violation;
     defaultPolicySet?: Date;
     defaultPolicyCreationFailed?: Date;
-    defaulPolicyOverwriteFailed?: Date;
-  }
+    defaultPolicyOverwriteFailed?: Date;
+    inspectedTabId?: number;
+}
 

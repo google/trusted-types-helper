@@ -20,13 +20,9 @@
 
 /// <reference types="chrome"/>
 /// <reference types="trusted-types" />
-import { Violations } from '../common/common';
+import { Violations, Message } from '../common/common';
 import { TrustedTypesWindow } from 'trusted-types/lib';
 
-// Let's make sure that the common types import properly.
-// TODO(mayrarobles): Remove this and use more useful things from '../common/common' to make this code more robust.
-const violations : Violations = new Violations();
-console.log(JSON.stringify(violations));
 
 // Alert when there is an error in case the user already has a default policy,
 // the extension policy may be set first and when the user's default policy
@@ -34,8 +30,8 @@ console.log(JSON.stringify(violations));
 addEventListener("error", (event) => {
   if (event.error.name == 'TypeError' && event.error.message.includes('Policy with name "default" already exists')) {
     const msg = {
-      type: 'defaulPolicyOverwriteFailed',
-      defaulPolicyOverwriteFailed: Date.now()
+      type: 'defaultPolicyOverwriteFailed',
+      defaultPolicyOverwriteFailed: Date.now()
     }
     window.postMessage(msg, '*');
     alert("Failed to overwrite the default policy set by the Trusted Types Helper extension.");
@@ -48,22 +44,48 @@ try {
     throw new Error("Browser does not support Trusted Types");
   }
   tt.createPolicy('default', {
-    createHTML: string => {
-      //TODO implement default policy processing/sanitizing
-      console.log(string);
-
-      const htmlViolation = { type: 'HTML',
-                               data : string,
-                               timestamp: Date.now()
-                            };
+    createHTML: (string => {
+      const htmlViolation = {
+        type: 'HTML',
+        data : string,
+        timestamp: Date.now()
+      };
       const msg = {
-        type: 'violation',
+        type: 'violationFound',
         violation: htmlViolation
       };
 
       window.postMessage(msg, '*');
       return string;
-    }
+    }),
+    createScript: (string => {
+      const scriptViolation = {
+        type: 'Script',
+        data : string,
+        timestamp: Date.now()
+      };
+      const msg = {
+        type: 'violationFound',
+        violation: scriptViolation
+      };
+
+      window.postMessage(msg, '*');
+      return string;
+    }),
+    createScriptURL: (string => {
+      const scriptURLViolation = {
+        type: 'URL',
+        data : string,
+        timestamp: Date.now()
+      };
+      const msg = {
+        type: 'violationFound',
+        violation: scriptURLViolation
+      };
+
+      window.postMessage(msg, '*');
+      return string;
+    })
   });
 } catch(error) {
   // Although JavaScript allows you to throw any value (including not Error's), in the try-statement

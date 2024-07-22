@@ -33,10 +33,15 @@
     "declarativeNetRequest",
     "declarativeNetRequestFeedback",
     "declarativeNetRequestWithHostAccess",
-     "webRequest"
+    "webRequest",
+    "storage",
+    "activeTab",
+    "tabs"
   ],
   "host_permissions": [
-    "<all_urls>"
+    "<all_urls>",
+     "http://*/*",
+    "https://*/*"
   ],
   "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'self'; require-trusted-types-for 'script';"
