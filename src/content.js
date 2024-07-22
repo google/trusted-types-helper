@@ -22,8 +22,14 @@
 // the extension policy may be set first and when the user's default policy
 // is set an error occurs.
 addEventListener("error", (event) => {
-  if (error.name == 'TypeError' && error.message.includes('Policy with name "default" already exists')) {
-    alert("Failure when Trusted Types Helper extension tried to set a default policy.", error);
+  if (event.error.name == 'TypeError' && event.error.message.includes('Policy with name "default" already exists')) {
+    const msg = {
+      type: 'defaulPolicyOverwriteFailed',
+      defaulPolicyOverwriteFailed: Date.now()
+    }
+    debugger;
+    window.postMessage(msg, '*');
+    alert("Failed to overwrite the default policy set by the Trusted Types Helper extension.");
   }
 });
 
@@ -36,7 +42,7 @@ try {
       const htmlViolation = { type: 'HTML',
                                data : string,
                                timestamp: Date.now()
-                              };
+                            };
       const msg = {
         type: 'violation',
         violation: htmlViolation
