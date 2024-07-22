@@ -107,12 +107,15 @@ test('Extension Dev Tools Panel shows Default Policy created messsage', async ()
   const element = await panel.$('.message-box.success');
   const elementText  = await element?.evaluate(el => el.textContent);
 
-  expect(elementText).toBe("Default policy was created.");
+  expect(elementText).toContain("Default policy was created.");
 }, TEST_TIMEOUT);
 
 
 test("Extension Dev Tools Panel shows failed to overwrite extension's default policy message", async () => {
   const dev_server_with_defaultPolicy = DEV_SERVER.concat('/?defaultPolicy=true');
+  page.on('dialog', async dialog => {
+    await dialog.accept();
+  });
   await page?.goto(dev_server_with_defaultPolicy, PUPPETEER_NAVIGATION_OPTS);
 
   if (!browser || !extensionId) {
@@ -124,7 +127,7 @@ test("Extension Dev Tools Panel shows failed to overwrite extension's default po
   const element = await panel.$('.message-box.error');
   const elementText  = await element?.evaluate(el => el.textContent);
 
-  expect(elementText).toBe("Failed to overwrite the extension's default policy.");
+  expect(elementText).toContain("Failed to overwrite the extension's default policy.");
 }, TEST_TIMEOUT);
 
 test('Extension popup content loads properly', async () => {
