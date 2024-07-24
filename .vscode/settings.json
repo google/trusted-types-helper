@@ -10,5 +10,10 @@
   "[json]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode"
   },
-  "editor.formatOnSave": true
+  "editor.formatOnSave": true,
+  "rewrap.autoWrap.enabled": true,
+
+  // Align this to .prettierrc
+  "editor.rulers": [80],
+  "rewrap.wrappingColumn": 80
 }
