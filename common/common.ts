@@ -26,12 +26,30 @@ export type ViolationType = "HTML" | "Script" | "URL";
 export class Violation {
   private data: string;
   private type: ViolationType;
-  private timestamp: Date;
+  private timestamp: number;
+  private stackTrace: StackTrace;
+  private documentUrl: string;
+  private sourceFile?: string;
 
-  public constructor(data: string, type: ViolationType, timestamp: Date) {
+  public constructor(
+    data: string,
+    type: ViolationType,
+    stackTrace: StackTrace,
+    documentUrl: string,
+  ) {
     this.data = data;
     this.type = type;
-    this.timestamp = timestamp;
+    this.timestamp = Date.now();
+    this.stackTrace = stackTrace;
+    this.documentUrl = documentUrl;
+    // Get source file from the scriptUrl field of the last element in the
+    // stack trace
+    if (stackTrace.frames && stackTrace.frames.length > 0) {
+      const lastFrame = stackTrace.frames[stackTrace.frames.length - 1];
+      if (typeof lastFrame !== "string") {
+        this.sourceFile = lastFrame.scriptUrl;
+      }
+    }
   }
 
   public getData(): string {
@@ -42,8 +60,20 @@ export class Violation {
     return this.type;
   }
 
-  public getTimestamp(): Date {
+  public getTimestamp(): number {
     return this.timestamp;
+  }
+
+  public getStackTrace(): StackTrace {
+    return this.stackTrace;
+  }
+
+  public getDocumentUrl(): string {
+    return this.documentUrl;
+  }
+
+  public geSourceFile(): string | undefined {
+    return this.sourceFile;
   }
 }
 
@@ -137,4 +167,72 @@ export function isMessage(obj: any): obj is Message {
         obj.inspectedTabId === undefined
       : true)
   );
+}
+
+/**
+ * This interface represents a single line in the stack trace.
+ */
+export interface StackFrame {
+  functionName?: string;
+  scriptUrl: string;
+  lineNumber: number;
+  columnNumber: number;
+}
+
+export type StackFrameOrError = StackFrame | string;
+
+/**
+ * This interface represents the entire stack frame which is composed
+ * of stack frames.
+ */
+export interface StackTrace {
+  frames: StackFrameOrError[];
+}
+
+/**
+ * Parses a stack trace string into a StackTrace object.
+ *
+ * The function attempts to extract function names, script URLs, line numbers,
+ * and column numbers from each line of the stack trace. If a line cannot be
+ * parsed successfully, it is included as a string in the frames array.
+ *
+ * @param {string} stack - The stack trace string to parse.
+ * @returns A StackTrace object containing an array of StackFrameOrError objects.
+ */
+export function parseStackTrace(stack: string): StackTrace {
+  var frames: StackFrameOrError[] = [];
+
+  const lines = stack.split("\n");
+
+  for (const line of lines) {
+    const fullMatch = line.match(/at\s+(\w+)\s+\((.+):(\d+):(\d+)\)/);
+    if (fullMatch) {
+      const [, functionNameWithAt, scriptUrl, lineNumber, columnNumber] =
+        fullMatch;
+      const functionName = functionNameWithAt.replace(/^at /, "");
+      frames.push({
+        functionName: functionName.trim(),
+        scriptUrl,
+        lineNumber: parseInt(lineNumber, 10),
+        columnNumber: parseInt(columnNumber, 10),
+      });
+      continue;
+    }
+    // Handle lines without function name (like the last line)
+    const urlMatch = line.match(/at https:\/\/(.+):(\d+):(\d+)$/);
+    if (urlMatch) {
+      const [, scriptUrl, lineNumber, columnNumber] = urlMatch;
+      frames.push({
+        scriptUrl,
+        lineNumber: parseInt(lineNumber, 10),
+        columnNumber: parseInt(columnNumber, 10),
+      });
+      continue;
+    }
+
+    // The string does not match any of string formats we were expecting
+    frames.push(line);
+  }
+
+  return { frames };
 }

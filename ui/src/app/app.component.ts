@@ -25,10 +25,10 @@ import {
   ViolationType,
   Violation,
   ViolationDataType,
+  StackTrace,
 } from '../../../common/common';
 import { NgClass, NgFor } from '@angular/common';
 
-const VIOLATION_TYPES_NAMES = ['HTML', 'Script', 'URL'];
 @Component({
   selector: 'app-root',
   standalone: true,
@@ -53,8 +53,11 @@ export class AppComponent {
         violationArray.forEach((violation) => {
           var messages = [
             `Violation Type: ${violation.getType()}`,
-            `Data: ${violation.getData()}`,
+            `Data passed into injection sink: ${violation.getData()}`,
             `Timestamp: ${violation.getTimestamp()}`,
+            `Stack trace: ${this.generateStackTraceMessage(violation.getStackTrace())}`,
+            `Document URL: ${violation.getDocumentUrl()}`,
+            `Source file of violation: ${violation.geSourceFile()}`,
           ];
           this.violationMessages.push(messages);
         });
@@ -79,13 +82,43 @@ export class AppComponent {
         const violationWithRightTyping = new Violation(
           violation['data'],
           violation['type'],
-          violation['timestamp'],
+          violation['stackTrace'],
+          violation['documentUrl'],
         );
         violationsPerTab.addViolation(violationWithRightTyping);
       }
     }
 
     return violationsPerTab;
+  }
+
+  /**
+   * Generates a formatted stack trace message from the provided stack trace
+   * object, excluding the first three lines.
+   *
+   * @param stackTrace - The stack trace object containing frame information.
+   * @returns A string representing the formatted stack trace message.
+   */
+  generateStackTraceMessage(stackTrace: StackTrace): string {
+    let stackTraceMessage = '';
+    let skipCount = 4; // Do not include first four lines because they are the calls in content.ts
+
+    for (const frame of stackTrace.frames) {
+      if (skipCount > 0) {
+        skipCount--;
+        continue;
+      }
+      if (typeof frame === 'string') {
+        stackTraceMessage += `  at ${frame}\n`;
+      } else if (frame.functionName) {
+        stackTraceMessage += `  at ${frame.functionName}(${frame.scriptUrl}:${frame.lineNumber}:${frame.columnNumber})\n`;
+      } else {
+        // No function name, no parenthesis
+        stackTraceMessage += `  at ${frame.scriptUrl}:${frame.lineNumber}:${frame.columnNumber}\n`;
+      }
+    }
+
+    return stackTraceMessage;
   }
 
   ngOnInit() {
