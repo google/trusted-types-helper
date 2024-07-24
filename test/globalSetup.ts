@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { setup } from 'jest-dev-server';
+import { setup } from "jest-dev-server";
 
 module.exports = async function globalSetup() {
   globalThis.servers = await setup({
@@ -23,4 +23,4 @@ module.exports = async function globalSetup() {
     port: 3000,
     debug: true,
   });
-}
+};

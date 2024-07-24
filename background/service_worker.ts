@@ -15,11 +15,16 @@
  */
 
 /// <reference types="chrome"/>
-import {DefaultPolicyData, Message, Violation, Violations} from "../common/common";
+import {
+  DefaultPolicyData,
+  Message,
+  Violation,
+  Violations,
+} from "../common/common";
 
-const CSP_HEADER = 'content-security-policy';
-const CSP_HEADER_REPORT_ONLY = 'Content-Security-Policy-Report-Only';
-const TRUSTED_TYPES_DIRECTIVE =  "require-trusted-types-for 'script'";
+const CSP_HEADER = "content-security-policy";
+const CSP_HEADER_REPORT_ONLY = "Content-Security-Policy-Report-Only";
+const TRUSTED_TYPES_DIRECTIVE = "require-trusted-types-for 'script'";
 
 var defaultPolicyData: DefaultPolicyData = {};
 var violationsPerTab: Record<string, Violations> = {};
@@ -27,7 +32,7 @@ var violationsPerTab: Record<string, Violations> = {};
 // Listens to the content script
 chrome.runtime.onMessage.addListener((msg: any, sender, sendResponse) => {
   switch (msg.type) {
-    case 'violationFound':
+    case "violationFound":
       if (msg.violation && sender.tab && sender.tab.id) {
         const activeTabId = sender.tab.id;
         if (!(activeTabId in violationsPerTab)) {
@@ -35,46 +40,60 @@ chrome.runtime.onMessage.addListener((msg: any, sender, sendResponse) => {
           violationsPerTab[activeTabId] = new Violations();
         }
         // Create violation object
-        var violation = new Violation(msg.violation.data, msg.violation.type, msg.violation.timestamp);
+        var violation = new Violation(
+          msg.violation.data,
+          msg.violation.type,
+          msg.violation.timestamp,
+        );
         // Add a violation to the corresponding tab id
         violationsPerTab[activeTabId].addViolation(violation);
         // Store all violations for all tabs in local storage
         chrome.storage.local.set(violationsPerTab);
       }
       break;
-    case 'listViolations':
+    case "listViolations":
       if (msg.inspectedTabId) {
-        chrome.storage.local.get(msg.inspectedTabId.toString(),  (result) => {
+        chrome.storage.local.get(msg.inspectedTabId.toString(), (result) => {
           sendResponse(result[msg.inspectedTabId]);
         });
       }
-     return true;
-    case 'defaultPolicySet':
+      return true;
+    case "defaultPolicySet":
       defaultPolicyData.wasSet = msg.defaultPolicySet;
       break;
-    case 'defaultPolicyCreationFailed':
+    case "defaultPolicyCreationFailed":
       defaultPolicyData.creationFailed = msg.defaultPolicyCreationFailed;
       break;
-    case 'defaultPolicyOverwriteFailed':
+    case "defaultPolicyOverwriteFailed":
       defaultPolicyData.overwriteFailed = msg.defaultPolicyOverwriteFailed;
       break;
-    case 'getDefaultPolicyData':
+    case "getDefaultPolicyData":
       sendResponse(defaultPolicyData);
       break;
-    }
+  }
 });
 
 if (chrome.webRequest !== undefined) {
   chrome.webRequest.onHeadersReceived.addListener(
     checkHeaderForTrustedTypes,
-      ({urls: ['<all_urls>']}), ['responseHeaders']);
+    { urls: ["<all_urls>"] },
+    ["responseHeaders"],
+  );
 }
 
-function checkHeaderForTrustedTypes(details: chrome.webRequest.WebResponseHeadersDetails): void {
+function checkHeaderForTrustedTypes(
+  details: chrome.webRequest.WebResponseHeadersDetails,
+): void {
   // Check if there is already a csp in a header with the trusted types directive
   if (details && details.responseHeaders) {
-    if (!(details.responseHeaders.some( (header: chrome.webRequest.HttpHeader) => header.name == CSP_HEADER &&
-      header.value && header.value.includes(TRUSTED_TYPES_DIRECTIVE)) )) {
+    if (
+      !details.responseHeaders.some(
+        (header: chrome.webRequest.HttpHeader) =>
+          header.name == CSP_HEADER &&
+          header.value &&
+          header.value.includes(TRUSTED_TYPES_DIRECTIVE),
+      )
+    ) {
       console.log("Changed the headers!");
       chrome.declarativeNetRequest.updateDynamicRules({
         addRules: [
@@ -86,15 +105,14 @@ function checkHeaderForTrustedTypes(details: chrome.webRequest.WebResponseHeader
               responseHeaders: [
                 {
                   header: CSP_HEADER_REPORT_ONLY,
-                  operation: chrome.declarativeNetRequest.HeaderOperation.APPEND,
+                  operation:
+                    chrome.declarativeNetRequest.HeaderOperation.APPEND,
                   value: TRUSTED_TYPES_DIRECTIVE + ";",
                 },
               ],
             },
             condition: {
-              "resourceTypes": [
-                "main_frame" as any
-              ]
+              resourceTypes: ["main_frame" as any],
             },
           },
         ],
@@ -103,4 +121,3 @@ function checkHeaderForTrustedTypes(details: chrome.webRequest.WebResponseHeader
     }
   }
 }
-
