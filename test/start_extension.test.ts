@@ -136,7 +136,7 @@ test(
     const dev_server_with_defaultPolicy = DEV_SERVER.concat(
       "/?defaultPolicy=true",
     );
-    page.on("dialog", async (dialog) => {
+    page?.on("dialog", async (dialog) => {
       await dialog.accept();
     });
     await page?.goto(dev_server_with_defaultPolicy, PUPPETEER_NAVIGATION_OPTS);

@@ -22,6 +22,7 @@ export interface DefaultPolicyData {
 
 export type ViolationType = "HTML" | "Script" | "URL";
 
+// TODO: Update the type guard below if this type is updated
 export class Violation {
   private data: string;
   private type: ViolationType;
@@ -44,6 +45,17 @@ export class Violation {
   public getTimestamp(): Date {
     return this.timestamp;
   }
+}
+
+// TODO: Update this type guard if the type above is updated
+export function isViolation(obj: any): obj is Violation {
+  return (
+    obj &&
+    obj.data?.type === "string" &&
+    obj.timestamp instanceof Date &&
+    obj.type?.type === "string" &&
+    ["HTML", "Script", "URL"].includes(obj.type)
+  );
 }
 
 export type ViolationDataType = {
@@ -74,6 +86,7 @@ export class Violations implements ViolationDataType {
   }
 }
 
+// TODO: Change the type guard below if this type is updated
 export interface Message {
   type:
     | "violationFound"
@@ -87,4 +100,41 @@ export interface Message {
   defaultPolicyCreationFailed?: Date;
   defaultPolicyOverwriteFailed?: Date;
   inspectedTabId?: number;
+}
+
+// TODO: Change this if the type above is updated.
+export function isMessage(obj: any): obj is Message {
+  return (
+    typeof obj === "object" &&
+    obj !== null &&
+    "type" in obj &&
+    typeof obj.type === "string" &&
+    [
+      "violationFound",
+      "listViolations",
+      "defaultPolicySet",
+      "defaultPolicyCreationFailed",
+      "defaultPolicyOverwriteFailed",
+      "getDefaultPolicyData",
+    ].includes(obj.type) &&
+    ("violation" in obj
+      ? obj.violation === undefined || isViolation(obj.violation)
+      : true) &&
+    ("defaultPolicySet" in obj
+      ? obj.defaultPolicySet instanceof Date ||
+        obj.defaultPolicySet === undefined
+      : true) &&
+    ("defaultPolicyCreationFailed" in obj
+      ? obj.defaultPolicyCreationFailed instanceof Date ||
+        obj.defaultPolicyCreationFailed === undefined
+      : true) &&
+    ("defaultPolicyOverwriteFailed" in obj
+      ? obj.defaultPolicyOverwriteFailed instanceof Date ||
+        obj.defaultPolicyOverwriteFailed === undefined
+      : true) &&
+    ("inspectedTabId" in obj
+      ? typeof obj.inspectedTabId === "number" ||
+        obj.inspectedTabId === undefined
+      : true)
+  );
 }
