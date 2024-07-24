@@ -9,22 +9,14 @@
   "devtools_page": "devtools.html",
   "content_scripts": [
     {
-      "matches": [
-        "<all_urls>"
-      ],
-      "js": [
-        "dist/content.js"
-      ],
+      "matches": ["<all_urls>"],
+      "js": ["dist/content.js"],
       "run_at": "document_start",
       "world": "MAIN"
     },
     {
-      "matches": [
-        "<all_urls>"
-      ],
-      "js": [
-        "dist/listen.js"
-      ],
+      "matches": ["<all_urls>"],
+      "js": ["dist/listen.js"],
       "run_at": "document_start",
       "world": "ISOLATED"
     }
@@ -38,18 +30,12 @@
     "activeTab",
     "tabs"
   ],
-  "host_permissions": [
-    "<all_urls>",
-     "http://*/*",
-    "https://*/*"
-  ],
+  "host_permissions": ["<all_urls>", "http://*/*", "https://*/*"],
   "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'self'; require-trusted-types-for 'script';"
   },
   "externally_connectable": {
-    "matches": [
-      "<all_urls>"
-    ]
+    "matches": ["<all_urls>"]
   },
   "background": {
     "service_worker": "dist/service_worker.js",

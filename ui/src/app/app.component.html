@@ -17,9 +17,15 @@
 <main class="main">
   <div class="content">
     <h1>{{ title }}</h1>
-    <p [ngClass]="{'message-box': true, 'success': isSuccess, 'error': !isSuccess}">{{message}}</p>
+    <p
+      [ngClass]="{ 'message-box': true, success: isSuccess, error: !isSuccess }"
+    >
+      {{ message }}
+    </p>
   </div>
-  <button (click)="generateViolationMessages()">Click me to see your violations!</button>
+  <button (click)="generateViolationMessages()">
+    Click me to see your violations!
+  </button>
   <ul>
     <ul>
       <li *ngFor="let violationGroup of violationMessages">
@@ -32,5 +38,4 @@
       </li>
     </ul>
   </ul>
-
 </main>

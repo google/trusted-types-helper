@@ -16,5 +16,3 @@
 
 // TODO(ecenazo): Change the second parameter empty string to a valid icon path.
 chrome.devtools.panels.create("TT Helper", "", "dist/browser/index.html");
-
-

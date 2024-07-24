@@ -20,21 +20,25 @@
 
 /// <reference types="chrome"/>
 /// <reference types="trusted-types" />
-import { Violations, Message } from '../common/common';
-import { TrustedTypesWindow } from 'trusted-types/lib';
-
+import { Violations, Message } from "../common/common";
+import { TrustedTypesWindow } from "trusted-types/lib";
 
 // Alert when there is an error in case the user already has a default policy,
 // the extension policy may be set first and when the user's default policy
 // is set an error occurs.
 addEventListener("error", (event) => {
-  if (event.error.name == 'TypeError' && event.error.message.includes('Policy with name "default" already exists')) {
+  if (
+    event.error.name == "TypeError" &&
+    event.error.message.includes('Policy with name "default" already exists')
+  ) {
     const msg = {
-      type: 'defaultPolicyOverwriteFailed',
-      defaultPolicyOverwriteFailed: Date.now()
-    }
-    window.postMessage(msg, '*');
-    alert("Failed to overwrite the default policy set by the Trusted Types Helper extension.");
+      type: "defaultPolicyOverwriteFailed",
+      defaultPolicyOverwriteFailed: Date.now(),
+    };
+    window.postMessage(msg, "*");
+    alert(
+      "Failed to overwrite the default policy set by the Trusted Types Helper extension.",
+    );
   }
 });
 
@@ -43,67 +47,70 @@ try {
   if (!tt) {
     throw new Error("Browser does not support Trusted Types");
   }
-  tt.createPolicy('default', {
-    createHTML: (string => {
+  tt.createPolicy("default", {
+    createHTML: (string) => {
       const htmlViolation = {
-        type: 'HTML',
-        data : string,
-        timestamp: Date.now()
+        type: "HTML",
+        data: string,
+        timestamp: Date.now(),
       };
       const msg = {
-        type: 'violationFound',
-        violation: htmlViolation
+        type: "violationFound",
+        violation: htmlViolation,
       };
 
-      window.postMessage(msg, '*');
+      window.postMessage(msg, "*");
       return string;
-    }),
-    createScript: (string => {
+    },
+    createScript: (string) => {
       const scriptViolation = {
-        type: 'Script',
-        data : string,
-        timestamp: Date.now()
+        type: "Script",
+        data: string,
+        timestamp: Date.now(),
       };
       const msg = {
-        type: 'violationFound',
-        violation: scriptViolation
+        type: "violationFound",
+        violation: scriptViolation,
       };
 
-      window.postMessage(msg, '*');
+      window.postMessage(msg, "*");
       return string;
-    }),
-    createScriptURL: (string => {
+    },
+    createScriptURL: (string) => {
       const scriptURLViolation = {
-        type: 'URL',
-        data : string,
-        timestamp: Date.now()
+        type: "URL",
+        data: string,
+        timestamp: Date.now(),
       };
       const msg = {
-        type: 'violationFound',
-        violation: scriptURLViolation
+        type: "violationFound",
+        violation: scriptURLViolation,
       };
 
-      window.postMessage(msg, '*');
+      window.postMessage(msg, "*");
       return string;
-    })
+    },
   });
-} catch(error) {
+} catch (error) {
   // Although JavaScript allows you to throw any value (including not Error's), in the try-statement
   // above, we either only fail a system call to trustedTypes.createPolicy (generating an Error) or
   // manually throw an Error in case self.trustedTypes is not available.
   if (error instanceof Error) {
-    console.error('Trusted Types Default Policy Creation Failed:', error.message);
+    console.error(
+      "Trusted Types Default Policy Creation Failed:",
+      error.message,
+    );
     const msg = {
-      type: 'defaultPolicyCreationFailed',
-      defaultPolicyCreationFailed: Date.now()
-    }
-    window.postMessage(msg, '*');
+      type: "defaultPolicyCreationFailed",
+      defaultPolicyCreationFailed: Date.now(),
+    };
+    window.postMessage(msg, "*");
   }
 }
 
 // When page reloads, these lines will get executed
 const msg = {
-  type: 'defaultPolicySet',
-  defaultPolicySet: Date.now()
-}
-window.postMessage(msg, '*');
+  type: "defaultPolicySet",
+  defaultPolicySet: Date.now(),
+};
+window.postMessage(msg, "*");

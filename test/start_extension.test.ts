@@ -14,16 +14,19 @@
  * limitations under the License.
  */
 
-import path from 'path';
-import puppeteer from 'puppeteer';
-import { Browser, Page, GoToOptions } from 'puppeteer';
-import { openDevToolsPanel } from './util';
+import path from "path";
+import puppeteer from "puppeteer";
+import { Browser, Page, GoToOptions } from "puppeteer";
+import { openDevToolsPanel } from "./util";
 
-const POPUP_PAGE_FILENAME = 'hello.html'; // Defined in manifest.json
-const DEV_SERVER = 'http://127.0.0.1:3000'; // Defined in test_server.js
+const POPUP_PAGE_FILENAME = "hello.html"; // Defined in manifest.json
+const DEV_SERVER = "http://127.0.0.1:3000"; // Defined in test_server.js
 const CHROME_TIMEOUT = 60_000; // 1 min
 const TEST_TIMEOUT = 300_000; // 5 min
-const PUPPETEER_NAVIGATION_OPTS: GoToOptions = { waitUntil: 'networkidle0', timeout: CHROME_TIMEOUT };
+const PUPPETEER_NAVIGATION_OPTS: GoToOptions = {
+  waitUntil: "networkidle0",
+  timeout: CHROME_TIMEOUT,
+};
 
 let browser: Browser | undefined;
 let page: Page | undefined;
@@ -34,23 +37,24 @@ let extensionId: string | undefined;
  */
 beforeEach(async () => {
   // Our extension is in the root folder.
-  const extension = path.resolve('.');
+  const extension = path.resolve(".");
 
   // Launch the browser and wait for it to boot.
   browser = await puppeteer.launch({
     args: [
       `--disable-extensions-except=${extension}`,
-      `--load-extension=${extension}`
+      `--load-extension=${extension}`,
     ],
     devtools: true,
-    headless: false
+    headless: false,
   });
   [page] = await browser.pages();
 
   // Check to see whether the extension has loaded.
   const targets = await browser.targets();
-  const extensionTarget = targets.find(target =>
-    target.url().startsWith('chrome-extension://'));
+  const extensionTarget = targets.find((target) =>
+    target.url().startsWith("chrome-extension://"),
+  );
   const extensionUrl = extensionTarget?.url();
   const regex = /^chrome-extension:\/\/([a-z]{32})\/.*$/;
   const match = extensionUrl?.match(regex);
@@ -65,77 +69,103 @@ afterEach(async () => {
   browser = undefined;
 });
 
-test('Extension writes report-only Trusted Types headers', async () => {
-  const response = await page?.goto(DEV_SERVER, PUPPETEER_NAVIGATION_OPTS);
-  const headers = response?.headers();
-  expect(headers).toBeTruthy();
-  expect(headers!['content-security-policy-report-only']).toContain('require-trusted-types-for');
-}, TEST_TIMEOUT);
+test(
+  "Extension writes report-only Trusted Types headers",
+  async () => {
+    const response = await page?.goto(DEV_SERVER, PUPPETEER_NAVIGATION_OPTS);
+    const headers = response?.headers();
+    expect(headers).toBeTruthy();
+    expect(headers!["content-security-policy-report-only"]).toContain(
+      "require-trusted-types-for",
+    );
+  },
+  TEST_TIMEOUT,
+);
 
-test('Extension DevTools Panel loads properly', async () => {
-  await page?.goto(DEV_SERVER, PUPPETEER_NAVIGATION_OPTS);
+test(
+  "Extension DevTools Panel loads properly",
+  async () => {
+    await page?.goto(DEV_SERVER, PUPPETEER_NAVIGATION_OPTS);
 
-  // const panel = await getDevtoolsPanel(page, { panelName: 'index.html' });
-  if (!browser || !extensionId) {
-    fail('Did not initialize the browser and the extension properly.');
-  }
-  const panel = await openDevToolsPanel(browser, extensionId, x => fail(x));
+    // const panel = await getDevtoolsPanel(page, { panelName: 'index.html' });
+    if (!browser || !extensionId) {
+      fail("Did not initialize the browser and the extension properly.");
+    }
+    const panel = await openDevToolsPanel(browser, extensionId, (x) => fail(x));
 
-  const panelDocument = await panel.evaluate(() => document.body.innerHTML);
-  expect(panelDocument).toContain("trusted-types-helper-ui");
+    const panelDocument = await panel.evaluate(() => document.body.innerHTML);
+    expect(panelDocument).toContain("trusted-types-helper-ui");
 
-  // Make sure we can interact with the panel Angular UI as well.
-  const panelBody = await panel.$("body");
-  await panelBody?.evaluate(e => {
-    const n = document.createElement('button');
-    n.textContent = "MAGIC BUTTON";
-    e.appendChild(n);
-  });
-  const panelBodyContent = await panelBody?.evaluate(e => e.innerHTML);
-  expect(panelBodyContent).toContain("MAGIC BUTTON");
-}, TEST_TIMEOUT);
+    // Make sure we can interact with the panel Angular UI as well.
+    const panelBody = await panel.$("body");
+    await panelBody?.evaluate((e) => {
+      const n = document.createElement("button");
+      n.textContent = "MAGIC BUTTON";
+      e.appendChild(n);
+    });
+    const panelBodyContent = await panelBody?.evaluate((e) => e.innerHTML);
+    expect(panelBodyContent).toContain("MAGIC BUTTON");
+  },
+  TEST_TIMEOUT,
+);
 
-test('Extension Dev Tools Panel shows Default Policy created messsage', async () => {
-  await page?.goto(DEV_SERVER, PUPPETEER_NAVIGATION_OPTS);
+test(
+  "Extension Dev Tools Panel shows Default Policy created messsage",
+  async () => {
+    await page?.goto(DEV_SERVER, PUPPETEER_NAVIGATION_OPTS);
 
-  if (!browser || !extensionId) {
-    fail('Did not initialize the browser and the extension properly.');
-  }
-  const panel = await openDevToolsPanel(browser, extensionId, x => fail(x));
+    if (!browser || !extensionId) {
+      fail("Did not initialize the browser and the extension properly.");
+    }
+    const panel = await openDevToolsPanel(browser, extensionId, (x) => fail(x));
 
-  // Get the text of the message box
-  const element = await panel.$('.message-box.success');
-  const elementText  = await element?.evaluate(el => el.textContent);
+    // Get the text of the message box
+    const element = await panel.$(".message-box.success");
+    const elementText = await element?.evaluate((el) => el.textContent);
 
-  expect(elementText).toContain("Default policy was created.");
-}, TEST_TIMEOUT);
+    expect(elementText).toContain("Default policy was created.");
+  },
+  TEST_TIMEOUT,
+);
 
+test(
+  "Extension Dev Tools Panel shows failed to overwrite extension's default policy message",
+  async () => {
+    const dev_server_with_defaultPolicy = DEV_SERVER.concat(
+      "/?defaultPolicy=true",
+    );
+    page.on("dialog", async (dialog) => {
+      await dialog.accept();
+    });
+    await page?.goto(dev_server_with_defaultPolicy, PUPPETEER_NAVIGATION_OPTS);
 
-test("Extension Dev Tools Panel shows failed to overwrite extension's default policy message", async () => {
-  const dev_server_with_defaultPolicy = DEV_SERVER.concat('/?defaultPolicy=true');
-  page.on('dialog', async dialog => {
-    await dialog.accept();
-  });
-  await page?.goto(dev_server_with_defaultPolicy, PUPPETEER_NAVIGATION_OPTS);
+    if (!browser || !extensionId) {
+      fail("Did not initialize the browser and the extension properly.");
+    }
+    const panel = await openDevToolsPanel(browser, extensionId, (x) => fail(x));
 
-  if (!browser || !extensionId) {
-    fail('Did not initialize the browser and the extension properly.');
-  }
-  const panel = await openDevToolsPanel(browser, extensionId, x => fail(x));
+    // Get the text of the message box
+    const element = await panel.$(".message-box.error");
+    const elementText = await element?.evaluate((el) => el.textContent);
 
-  // Get the text of the message box
-  const element = await panel.$('.message-box.error');
-  const elementText  = await element?.evaluate(el => el.textContent);
+    expect(elementText).toContain(
+      "Failed to overwrite the extension's default policy.",
+    );
+  },
+  TEST_TIMEOUT,
+);
 
-  expect(elementText).toContain("Failed to overwrite the extension's default policy.");
-}, TEST_TIMEOUT);
-
-test('Extension popup content loads properly', async () => {
-  await page?.goto(DEV_SERVER, PUPPETEER_NAVIGATION_OPTS);
-  const popup = await browser?.newPage();
-  await popup?.goto(`chrome-extension://${extensionId}/${POPUP_PAGE_FILENAME}`)
-  const popupContent = await popup?.evaluate(() => document.body.innerHTML);
-  expect(popupContent).toBeTruthy();
-  expect(popupContent).toContain('Trusted Types Helper');
-}, TEST_TIMEOUT);
-
+test(
+  "Extension popup content loads properly",
+  async () => {
+    await page?.goto(DEV_SERVER, PUPPETEER_NAVIGATION_OPTS);
+    const popup = await browser?.newPage();
+    await popup?.goto(
+      `chrome-extension://${extensionId}/${POPUP_PAGE_FILENAME}`,
+    );
+    const popupContent = await popup?.evaluate(() => document.body.innerHTML);
+    expect(popupContent).toBeTruthy();
+    expect(popupContent).toContain("Trusted Types Helper");
+  },
+  TEST_TIMEOUT,
+);

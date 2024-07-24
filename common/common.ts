@@ -15,66 +15,76 @@
  */
 
 export interface DefaultPolicyData {
-    wasSet?: Date;
-    creationFailed?: Date;
-    overwriteFailed ?: Date;
+  wasSet?: Date;
+  creationFailed?: Date;
+  overwriteFailed?: Date;
 }
 
-export type ViolationType = 'HTML' | 'Script' | 'URL';
+export type ViolationType = "HTML" | "Script" | "URL";
 
 export class Violation {
-    private data: string;
-    private type: ViolationType;
-    private timestamp: Date;
+  private data: string;
+  private type: ViolationType;
+  private timestamp: Date;
 
-    public constructor(data: string, type: ViolationType, timestamp: Date) {
-        this.data = data;
-        this.type = type;
-        this.timestamp = timestamp;
-    }
+  public constructor(data: string, type: ViolationType, timestamp: Date) {
+    this.data = data;
+    this.type = type;
+    this.timestamp = timestamp;
+  }
 
-    public getData(): string { return this.data; }
+  public getData(): string {
+    return this.data;
+  }
 
-    public getType(): ViolationType { return this.type; }
+  public getType(): ViolationType {
+    return this.type;
+  }
 
-    public getTimestamp(): Date { return this.timestamp; }
+  public getTimestamp(): Date {
+    return this.timestamp;
+  }
 }
 
 export type ViolationDataType = {
-    [key in ViolationType] : Array<Violation>;
+  [key in ViolationType]: Array<Violation>;
 };
 
 export class Violations implements ViolationDataType {
-    public HTML: Array<Violation> = [];
-    public Script: Array<Violation> = [];
-    public URL: Array<Violation> = [];
+  public HTML: Array<Violation> = [];
+  public Script: Array<Violation> = [];
+  public URL: Array<Violation> = [];
 
-    constructor() {}
+  constructor() {}
 
-    public addViolation(violation: Violation) {
-        switch (violation.getType()) {
-            case 'HTML':
-              this.HTML.push(violation);
-              break;
-            case 'Script':
-              this.Script.push(violation);
-              break;
-            case 'URL':
-              this.URL.push(violation);
-              break;
-            default:
-              console.error(`Unknown violation type: ${violation.getType()}`);
-        }
+  public addViolation(violation: Violation) {
+    switch (violation.getType()) {
+      case "HTML":
+        this.HTML.push(violation);
+        break;
+      case "Script":
+        this.Script.push(violation);
+        break;
+      case "URL":
+        this.URL.push(violation);
+        break;
+      default:
+        console.error(`Unknown violation type: ${violation.getType()}`);
     }
+  }
 }
 
 export interface Message {
-    type: 'violationFound' | 'listViolations' | 'defaultPolicySet' | 'defaultPolicyCreationFailed' |
-        'defaultPolicyOverwriteFailed' | 'getDefaultPolicyData';
-    violation?: Violation;
-    defaultPolicySet?: Date;
-    defaultPolicyCreationFailed?: Date;
-    defaultPolicyOverwriteFailed?: Date;
-    inspectedTabId?: number;
+  type:
+    | "violationFound"
+    | "listViolations"
+    | "defaultPolicySet"
+    | "defaultPolicyCreationFailed"
+    | "defaultPolicyOverwriteFailed"
+    | "getDefaultPolicyData";
+  violation?: Violation;
+  defaultPolicySet?: Date;
+  defaultPolicyCreationFailed?: Date;
+  defaultPolicyOverwriteFailed?: Date;
+  inspectedTabId?: number;
 }
-
