@@ -20,7 +20,14 @@
 
 /// <reference types="chrome"/>
 /// <reference types="trusted-types" />
-import { Violations, Message } from "../common/common";
+import {
+  Violation,
+  Message,
+  StackTrace,
+  StackFrameOrError,
+  parseStackTrace,
+  ViolationType,
+} from "../common/common";
 import { TrustedTypesWindow } from "trusted-types/lib";
 
 // Alert when there is an error in case the user already has a default policy,
@@ -42,52 +49,30 @@ addEventListener("error", (event) => {
   }
 });
 
+function getStackTrace(): string | undefined {
+  var err = new Error();
+  return err.stack;
+}
+
 try {
   const tt = (self as unknown as TrustedTypesWindow).trustedTypes;
   if (!tt) {
     throw new Error("Browser does not support Trusted Types");
   }
+
   tt.createPolicy("default", {
     createHTML: (string) => {
-      const htmlViolation = {
-        type: "HTML",
-        data: string,
-        timestamp: Date.now(),
-      };
-      const msg = {
-        type: "violationFound",
-        violation: htmlViolation,
-      };
-
-      window.postMessage(msg, "*");
+      window.postMessage(createMessage(string, "HTML"), "*");
       return string;
     },
+
     createScript: (string) => {
-      const scriptViolation = {
-        type: "Script",
-        data: string,
-        timestamp: Date.now(),
-      };
-      const msg = {
-        type: "violationFound",
-        violation: scriptViolation,
-      };
-
-      window.postMessage(msg, "*");
+      window.postMessage(createMessage(string, "Script"), "*");
       return string;
     },
-    createScriptURL: (string) => {
-      const scriptURLViolation = {
-        type: "URL",
-        data: string,
-        timestamp: Date.now(),
-      };
-      const msg = {
-        type: "violationFound",
-        violation: scriptURLViolation,
-      };
 
-      window.postMessage(msg, "*");
+    createScriptURL: (string) => {
+      window.postMessage(createMessage(string, "URL"), "*");
       return string;
     },
   });
@@ -114,3 +99,37 @@ const msg = {
   defaultPolicySet: Date.now(),
 };
 window.postMessage(msg, "*");
+
+/**
+ * Creates a Message object representing a violation.
+ *
+ * This function takes a violation string and type as input,
+ * generates a stack trace, and constructs a Violation object.
+ *
+ * @param string - The violation message string.
+ * @param type - The type of violation.
+ * @returns A Message object containing the violation details.
+ */
+function createMessage(string: string, type: ViolationType): Message {
+  const stack = getStackTrace();
+
+  if (!stack) {
+    // Todo: Make sure to surface this error in the ui
+    const msg: Message = {
+      type: "violationFound",
+    };
+    return msg;
+  }
+
+  const msg: Message = {
+    type: "violationFound",
+    violation: new Violation(
+      string,
+      type,
+      parseStackTrace(stack),
+      window.document.URL,
+    ),
+  };
+
+  return msg;
+}

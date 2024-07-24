@@ -40,10 +40,11 @@ chrome.runtime.onMessage.addListener((msg: any, sender, sendResponse) => {
           violationsPerTab[activeTabId] = new Violations();
         }
         // Create violation object
-        var violation = new Violation(
+        var violation: Violation = new Violation(
           msg.violation.data,
           msg.violation.type,
-          msg.violation.timestamp,
+          msg.violation.stackTrace,
+          msg.violation.documentUrl,
         );
         // Add a violation to the corresponding tab id
         violationsPerTab[activeTabId].addViolation(violation);
