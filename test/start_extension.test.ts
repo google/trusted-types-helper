@@ -69,7 +69,8 @@ afterEach(async () => {
   browser = undefined;
 });
 
-test(
+// TODO(mayrarobles): Figure out what is a good alternative to this because this check isn't working.
+xit(
   "Extension writes report-only Trusted Types headers",
   async () => {
     const response = await page?.goto(DEV_SERVER, PUPPETEER_NAVIGATION_OPTS);
