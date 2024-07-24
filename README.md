@@ -34,6 +34,16 @@ cd ..
 npm run build
 ```
 
+### Formatting
+
+In the `.vscode/extensions.json`, we recommend the `prettier-vscode` extension. Prettier can also be run as a NPM script:
+
+```bash
+npm run format
+```
+
+and will automatically run as a part of `npm run build`.
+
 ## To test
 
 **Please run the steps above for build/run before attempting to run tests.**
