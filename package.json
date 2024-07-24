@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "",
   "scripts": {
-    "build:clean": "rm -r dist/",
+    "build:clean": "rm -rf dist/",
     "build:ui": "cd ui && ng build",
     "build:service_worker": "cd background && tsc service_worker.ts --strict --noEmit && esbuild service_worker.ts --bundle --tsconfig=../tsconfig.json --outdir=../dist",
     "build:content_script": "cd src && tsc content.ts devtools.ts listen.ts --strict --noEmit && esbuild content.ts devtools.ts listen.ts --bundle --tsconfig=../tsconfig.json --outdir=../dist",
