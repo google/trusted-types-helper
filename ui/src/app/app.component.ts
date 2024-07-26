@@ -82,6 +82,7 @@ export class AppComponent {
         const violationWithRightTyping = new Violation(
           violation['data'],
           violation['type'],
+          violation['timestamp'],
           violation['stackTrace'],
           violation['documentUrl'],
         );

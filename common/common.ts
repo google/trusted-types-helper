@@ -34,12 +34,13 @@ export class Violation {
   public constructor(
     data: string,
     type: ViolationType,
+    timestamp: number,
     stackTrace: StackTrace,
     documentUrl: string,
   ) {
     this.data = data;
     this.type = type;
-    this.timestamp = Date.now();
+    this.timestamp = timestamp;
     this.stackTrace = stackTrace;
     this.documentUrl = documentUrl;
     // Get source file from the scriptUrl field of the last element in the

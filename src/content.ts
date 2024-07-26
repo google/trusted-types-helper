@@ -126,6 +126,7 @@ function createMessage(string: string, type: ViolationType): Message {
     violation: new Violation(
       string,
       type,
+      Date.now(),
       parseStackTrace(stack),
       window.document.URL,
     ),
