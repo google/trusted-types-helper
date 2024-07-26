@@ -43,6 +43,7 @@ chrome.runtime.onMessage.addListener((msg: any, sender, sendResponse) => {
         var violation: Violation = new Violation(
           msg.violation.data,
           msg.violation.type,
+          msg.violation.timestamp,
           msg.violation.stackTrace,
           msg.violation.documentUrl,
         );

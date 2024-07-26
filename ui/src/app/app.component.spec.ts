@@ -20,21 +20,39 @@ import {
   isMessage,
   ViolationDataType,
   Violation,
+  StackFrameOrError,
   Message,
 } from '../../../common/common';
 
 describe('AppComponent', () => {
   let chromeRuntimeMock: any; // Full type definition is way too long.
+  const frames: StackFrameOrError[] = [];
   const listViolationsResponse: ViolationDataType = {
     // TODO: ViolationDataType isn't quite correct-- it contains a class
     // Violation but Violation should really be an interface (because a class
     // wouldn't survive being stringified and then un-stringified).
     HTML: [
-      new Violation('foobar', 'HTML', new Date()),
-      new Violation('bizbaz', 'HTML', new Date()),
+      new Violation('foobar', 'HTML', Date.now(), { frames }, 'someSourceFile'),
+      new Violation('bizbaz', 'HTML', Date.now(), { frames }, 'someSourceFile'),
     ],
-    Script: [new Violation('alert(1)', 'Script', new Date())],
-    URL: [new Violation('https://www.google.com/', 'URL', new Date())],
+    Script: [
+      new Violation(
+        'alert(1)',
+        'Script',
+        Date.now(),
+        { frames },
+        'someSourceFile',
+      ),
+    ],
+    URL: [
+      new Violation(
+        'https://www.google.com/',
+        'URL',
+        Date.now(),
+        { frames },
+        'someSourceFile',
+      ),
+    ],
   };
 
   beforeEach(async () => {
