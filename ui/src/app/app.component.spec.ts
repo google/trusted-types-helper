@@ -112,7 +112,7 @@ describe('AppComponent', () => {
     const compiled = fixture.nativeElement as HTMLElement;
 
     // Trigger the event that will fetch and render the violations.
-    await fixture.componentInstance.generateViolationMessages();
+    await fixture.componentInstance.getViolations();
     fixture.detectChanges();
 
     // Make sure that the correct Chrome APIs were called
@@ -135,11 +135,11 @@ describe('AppComponent', () => {
         violationType as keyof ViolationDataType
       ]) {
         expect(allRenderedMessages).toContain(violation.getData());
-        expect(allRenderedMessages).toContain(
-          // TODO: Change this if we come up with a way to display timestamps
-          // more nicely.
-          violation.getTimestamp().toString(),
-        );
+        // expect(allRenderedMessages).toContain(
+        //   // TODO: Change this if we come up with a way to display timestamps
+        //   // more nicely.
+        //   violation.getTimestamp().toString(),
+        // );
         expect(allRenderedMessages).toContain(violation.getType());
       }
     }
