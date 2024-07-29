@@ -27,12 +27,22 @@ import {
   ViolationDataType,
   StackTrace,
 } from '../../../common/common';
-import { NgClass, NgFor } from '@angular/common';
+import { NgClass, NgFor, CommonModule } from '@angular/common';
+import { ViolationComponent } from './violation/violation.component';
+import { WarningComponent } from './warning/warning.component';
+import { BehaviorSubject, Observable } from 'rxjs';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet, NgClass, NgFor],
+  imports: [
+    RouterOutlet,
+    NgClass,
+    NgFor,
+    ViolationComponent,
+    WarningComponent,
+    CommonModule,
+  ],
   templateUrl: './app.component.html',
   styleUrl: './app.component.css',
 })
@@ -40,27 +50,21 @@ export class AppComponent {
   title = 'trusted-types-helper-ui';
   message = 'No message yet.';
   isSuccess = false;
-  violationMessage = '';
-  violationMessages: Array<Array<string>> = [];
+  violations: Violation[] = [];
+  defaultPolicyDataSubject = new BehaviorSubject<DefaultPolicyData | null>(
+    null,
+  );
+  defaultPolicyData$: Observable<DefaultPolicyData | null> =
+    this.defaultPolicyDataSubject.asObservable();
 
-  async generateViolationMessages() {
+  async getViolations() {
     const response = await this.getViolationDataFromLocalStorage();
     const violations = this.giveProperTypings(response);
-    // Loop through all violation arrays in the "violations" object
+    // Loop through all violation arrays in the "Violations" object
     for (const violationsType of Object.getOwnPropertyNames(violations)) {
       const violationArray = violations[violationsType as keyof Violations];
       if (violationArray && Array.isArray(violationArray)) {
-        violationArray.forEach((violation) => {
-          var messages = [
-            `Violation Type: ${violation.getType()}`,
-            `Data passed into injection sink: ${violation.getData()}`,
-            `Timestamp: ${violation.getTimestamp()}`,
-            `Stack trace: ${this.generateStackTraceMessage(violation.getStackTrace())}`,
-            `Document URL: ${violation.getDocumentUrl()}`,
-            `Source file of violation: ${violation.geSourceFile()}`,
-          ];
-          this.violationMessages.push(messages);
-        });
+        this.violations.push(...violationArray);
       }
     }
   }
@@ -93,51 +97,14 @@ export class AppComponent {
     return violationsPerTab;
   }
 
-  /**
-   * Generates a formatted stack trace message from the provided stack trace
-   * object, excluding the first three lines.
-   *
-   * @param stackTrace - The stack trace object containing frame information.
-   * @returns A string representing the formatted stack trace message.
-   */
-  generateStackTraceMessage(stackTrace: StackTrace): string {
-    let stackTraceMessage = '';
-    let skipCount = 4; // Do not include first four lines because they are the calls in content.ts
-
-    for (const frame of stackTrace.frames) {
-      if (skipCount > 0) {
-        skipCount--;
-        continue;
-      }
-      if (typeof frame === 'string') {
-        stackTraceMessage += `  at ${frame}\n`;
-      } else if (frame.functionName) {
-        stackTraceMessage += `  at ${frame.functionName}(${frame.scriptUrl}:${frame.lineNumber}:${frame.columnNumber})\n`;
-      } else {
-        // No function name, no parenthesis
-        stackTraceMessage += `  at ${frame.scriptUrl}:${frame.lineNumber}:${frame.columnNumber}\n`;
-      }
-    }
-
-    return stackTraceMessage;
+  async updateDefaultPolicyData() {
+    const defaultPolicyData = await chrome.runtime.sendMessage({
+      type: 'getDefaultPolicyData',
+    });
+    this.defaultPolicyDataSubject.next(defaultPolicyData);
   }
 
   ngOnInit() {
-    console.log('OnInit');
-    // Send message requesting default policy data
-    (async () => {
-      const defaultPolicyData: DefaultPolicyData =
-        await chrome.runtime.sendMessage({ type: 'getDefaultPolicyData' });
-      if (defaultPolicyData.creationFailed) {
-        this.isSuccess = false;
-        this.message = 'Default policy creation failed.';
-      } else if (defaultPolicyData.overwriteFailed) {
-        this.isSuccess = false;
-        this.message = "Failed to overwrite the extension's default policy.";
-      } else if (defaultPolicyData.wasSet) {
-        this.isSuccess = true;
-        this.message = 'Default policy was created.';
-      }
-    })();
+    this.updateDefaultPolicyData();
   }
 }

@@ -13,19 +13,3 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-message-box {
-  padding: 10px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-}
-
-.success {
-  background-color: lightgreen;
-  color: #000;
-}
-
-.error {
-  background-color: lightcoral;
-  color: #000;
-}

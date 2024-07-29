@@ -53,6 +53,10 @@ export class Violation {
     }
   }
 
+  // This setter is used for testing purposes only
+  public setSourceFile(sourceFile: string): void {
+    this.sourceFile = sourceFile;
+  }
   public getData(): string {
     return this.data;
   }
@@ -73,7 +77,7 @@ export class Violation {
     return this.documentUrl;
   }
 
-  public geSourceFile(): string | undefined {
+  public getSourceFile(): string | undefined {
     return this.sourceFile;
   }
 }
