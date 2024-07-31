@@ -1,32 +1,25 @@
 import { Component, Input, OnInit } from '@angular/core';
-import { DefaultPolicyData } from '../../../../common/common';
+import { DefaultPolicyWarning } from '../../../../common/common';
 import { NgClass } from '@angular/common';
+import { MatCardModule } from '@angular/material/card';
 
 @Component({
   selector: 'app-warning',
   standalone: true,
-  imports: [NgClass],
+  imports: [NgClass, MatCardModule],
   templateUrl: './warning.component.html',
   styleUrl: './warning.component.css',
 })
 export class WarningComponent implements OnInit {
   @Input()
-  defaultPolicyData: DefaultPolicyData | null = null;
+  defaultPolicyWarning: DefaultPolicyWarning | null = null;
   isSuccess = false;
   message = 'No message yet.';
 
   generateDefaultPolicyWarning() {
-    if (this.defaultPolicyData) {
-      if (this.defaultPolicyData.creationFailed) {
-        this.isSuccess = false;
-        this.message = 'Default policy creation failed.';
-      } else if (this.defaultPolicyData.overwriteFailed) {
-        this.isSuccess = false;
-        this.message = "Failed to overwrite the extension's default policy.";
-      } else if (this.defaultPolicyData.wasSet) {
-        this.isSuccess = true;
-        this.message = 'Default policy was created.';
-      }
+    if (this.defaultPolicyWarning) {
+      this.message = this.defaultPolicyWarning.message;
+      this.isSuccess = this.defaultPolicyWarning.isSuccess;
     }
   }
 

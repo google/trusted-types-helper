@@ -125,7 +125,7 @@ test(
     const element = await panel.$(".message-box.success");
     const elementText = await element?.evaluate((el) => el.textContent);
 
-    expect(elementText).toContain("Default policy was created.");
+    expect(elementText).toContain("Trusted Types Default Policy was created.");
   },
   TEST_TIMEOUT,
 );

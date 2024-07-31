@@ -21,12 +21,10 @@
 /// <reference types="chrome"/>
 /// <reference types="trusted-types" />
 import {
-  Violation,
   Message,
-  StackTrace,
-  StackFrameOrError,
-  parseStackTrace,
   ViolationType,
+  createDefaultPolicyWarning,
+  createViolationData,
 } from "../common/common";
 import { TrustedTypesWindow } from "trusted-types/lib";
 
@@ -39,8 +37,11 @@ addEventListener("error", (event) => {
     event.error.message.includes('Policy with name "default" already exists')
   ) {
     const msg = {
-      type: "defaultPolicyOverwriteFailed",
-      defaultPolicyOverwriteFailed: Date.now(),
+      type: "defaultPolicyWarning",
+      defaultPolicyWarning: createDefaultPolicyWarning(
+        "Failed to overwrite the extension's default policy.",
+        false,
+      ),
     };
     window.postMessage(msg, "*");
     alert(
@@ -86,8 +87,11 @@ try {
       error.message,
     );
     const msg = {
-      type: "defaultPolicyCreationFailed",
-      defaultPolicyCreationFailed: Date.now(),
+      type: "defaultPolicyWarning",
+      defaultPolicyWarning: createDefaultPolicyWarning(
+        "Trusted Types Default Policy creation failed.",
+        false,
+      ),
     };
     window.postMessage(msg, "*");
   }
@@ -95,8 +99,11 @@ try {
 
 // When page reloads, these lines will get executed
 const msg = {
-  type: "defaultPolicySet",
-  defaultPolicySet: Date.now(),
+  type: "defaultPolicyWarning",
+  defaultPolicyWarning: createDefaultPolicyWarning(
+    "Trusted Types Default Policy was created.",
+    true,
+  ),
 };
 window.postMessage(msg, "*");
 
@@ -117,17 +124,23 @@ function createMessage(string: string, type: ViolationType): Message {
     // Todo: Make sure to surface this error in the ui
     const msg: Message = {
       type: "violationFound",
+      violation: {
+        data: string,
+        type: type,
+        error: true,
+      },
     };
+
     return msg;
   }
 
   const msg: Message = {
     type: "violationFound",
-    violation: new Violation(
+    violation: createViolationData(
       string,
       type,
       Date.now(),
-      parseStackTrace(stack),
+      stack,
       window.document.URL,
     ),
   };
