@@ -93,6 +93,16 @@ export function isViolation(obj: any): obj is Violation {
   );
 }
 
+// Checks whether 2 violations come from the same root cause, meaning they
+// share the unsafe call to the DOM sink
+export function haveSameRootCause(
+  violation1: Violation,
+  violation2: Violation,
+): boolean {
+  // TODO(mayrarobles)
+  return false;
+}
+
 export type ViolationDataType = {
   [key in ViolationType]: Array<Violation>;
 };
