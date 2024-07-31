@@ -14,12 +14,6 @@
  * limitations under the License.
  */
 
-export interface DefaultPolicyData {
-  wasSet?: Date;
-  creationFailed?: Date;
-  overwriteFailed?: Date;
-}
-
 export type ViolationType = "HTML" | "Script" | "URL";
 
 // TODO: Update the type guard below if this type is updated
@@ -103,6 +97,37 @@ export function haveSameRootCause(
   return false;
 }
 
+/**
+ * This interface represents the data that can be used to create a violation.
+ * Something to note is that it does not contain a stack trace of type StackTrace,
+ * instead, it contains a string that needs to be parsed into a StackTrace object
+ * to create the Violation object.
+ */
+export interface ViolationData {
+  data: string;
+  type: ViolationType;
+  timestamp: number;
+  uprocessedStackTrace: string;
+  documentUrl: string;
+}
+
+export function createViolationData(
+  data: string,
+  type: ViolationType,
+  timestamp: number,
+  unprocessedStackTrace: string,
+  documentUrl: string,
+) {
+  const violationData: ViolationData = {
+    data: data,
+    type: type,
+    timestamp: timestamp,
+    uprocessedStackTrace: unprocessedStackTrace,
+    documentUrl: documentUrl,
+  };
+  return violationData;
+}
+
 export type ViolationDataType = {
   [key in ViolationType]: Array<Violation>;
 };
@@ -131,56 +156,49 @@ export class Violations implements ViolationDataType {
   }
 }
 
-// TODO: Change the type guard below if this type is updated
-export interface Message {
-  type:
-    | "violationFound"
-    | "listViolations"
-    | "defaultPolicySet"
-    | "defaultPolicyCreationFailed"
-    | "defaultPolicyOverwriteFailed"
-    | "getDefaultPolicyData";
-  violation?: Violation;
-  defaultPolicySet?: Date;
-  defaultPolicyCreationFailed?: Date;
-  defaultPolicyOverwriteFailed?: Date;
-  inspectedTabId?: number;
+export interface ViolationError {
+  data: string;
+  type: ViolationType;
+  error: true;
 }
+
+export interface ViolationFoundMessage {
+  type: "violationFound";
+  violation: ViolationData | ViolationError;
+}
+
+export interface ListViolationsCommand {
+  type: "listViolations";
+  inspectedTabId: number;
+}
+
+export interface DefaultPolicyWarningMessage {
+  type: "defaultPolicyWarning";
+  defaultPolicyWarning: DefaultPolicyWarning;
+}
+
+export interface GetDefaultPolicyWarningCommand {
+  type: "getDefaultPolicyWarning";
+}
+
+/**
+ * Each message has a specific structure based on its type. These structures
+ * are used to represent different types of events, commands, or data transfers.
+ */
+export type Message =
+  | ViolationFoundMessage
+  | ListViolationsCommand
+  | DefaultPolicyWarningMessage
+  | GetDefaultPolicyWarningCommand;
 
 // TODO: Change this if the type above is updated.
 export function isMessage(obj: any): obj is Message {
   return (
-    typeof obj === "object" &&
-    obj !== null &&
     "type" in obj &&
-    typeof obj.type === "string" &&
-    [
-      "violationFound",
-      "listViolations",
-      "defaultPolicySet",
-      "defaultPolicyCreationFailed",
-      "defaultPolicyOverwriteFailed",
-      "getDefaultPolicyData",
-    ].includes(obj.type) &&
-    ("violation" in obj
-      ? obj.violation === undefined || isViolation(obj.violation)
-      : true) &&
-    ("defaultPolicySet" in obj
-      ? obj.defaultPolicySet instanceof Date ||
-        obj.defaultPolicySet === undefined
-      : true) &&
-    ("defaultPolicyCreationFailed" in obj
-      ? obj.defaultPolicyCreationFailed instanceof Date ||
-        obj.defaultPolicyCreationFailed === undefined
-      : true) &&
-    ("defaultPolicyOverwriteFailed" in obj
-      ? obj.defaultPolicyOverwriteFailed instanceof Date ||
-        obj.defaultPolicyOverwriteFailed === undefined
-      : true) &&
-    ("inspectedTabId" in obj
-      ? typeof obj.inspectedTabId === "number" ||
-        obj.inspectedTabId === undefined
-      : true)
+    (obj.type === "violationFound" ||
+      obj.type === "listViolations" ||
+      obj.type === "defaultPolicyWarning" ||
+      obj.type === "getDefaultPolicyWarning")
   );
 }
 
@@ -205,49 +223,35 @@ export interface StackTrace {
 }
 
 /**
- * Parses a stack trace string into a StackTrace object.
+ * Defines the structure of a default policy warning.
  *
- * The function attempts to extract function names, script URLs, line numbers,
- * and column numbers from each line of the stack trace. If a line cannot be
- * parsed successfully, it is included as a string in the frames array.
- *
- * @param {string} stack - The stack trace string to parse.
- * @returns A StackTrace object containing an array of StackFrameOrError objects.
+ * @interface DefaultPolicyWarning
+ * @property {string} message The warning message.
+ * @property {boolean} isSuccess Indicates whether the operation was successful.
+ * @property {number} date The timestamp of the warning.
  */
-export function parseStackTrace(stack: string): StackTrace {
-  var frames: StackFrameOrError[] = [];
+export interface DefaultPolicyWarning {
+  message: string;
+  isSuccess: boolean;
+  date: number;
+}
 
-  const lines = stack.split("\n");
-
-  for (const line of lines) {
-    const fullMatch = line.match(/at\s+(\w+)\s+\((.+):(\d+):(\d+)\)/);
-    if (fullMatch) {
-      const [, functionNameWithAt, scriptUrl, lineNumber, columnNumber] =
-        fullMatch;
-      const functionName = functionNameWithAt.replace(/^at /, "");
-      frames.push({
-        functionName: functionName.trim(),
-        scriptUrl,
-        lineNumber: parseInt(lineNumber, 10),
-        columnNumber: parseInt(columnNumber, 10),
-      });
-      continue;
-    }
-    // Handle lines without function name (like the last line)
-    const urlMatch = line.match(/at https:\/\/(.+):(\d+):(\d+)$/);
-    if (urlMatch) {
-      const [, scriptUrl, lineNumber, columnNumber] = urlMatch;
-      frames.push({
-        scriptUrl,
-        lineNumber: parseInt(lineNumber, 10),
-        columnNumber: parseInt(columnNumber, 10),
-      });
-      continue;
-    }
-
-    // The string does not match any of string formats we were expecting
-    frames.push(line);
-  }
-
-  return { frames };
+/**
+ * Creates a default policy warning.
+ *
+ * @param {string} message The warning message.
+ * @param {boolean} isSuccess Indicates whether the operation was successful.
+ * @param {number} date The timestamp of the warning.
+ * @returns {DefaultPolicyWarning} The created default policy warning object.
+ */
+export function createDefaultPolicyWarning(
+  message: string,
+  isSuccess: boolean,
+): DefaultPolicyWarning {
+  const defaultPolicyWarning: DefaultPolicyWarning = {
+    message: message,
+    isSuccess: isSuccess,
+    date: Date.now(),
+  };
+  return defaultPolicyWarning;
 }

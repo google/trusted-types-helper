@@ -16,24 +16,30 @@
 
 /// <reference types="chrome"/>
 import {
-  DefaultPolicyData,
   Message,
   Violation,
   Violations,
+  DefaultPolicyWarning,
+  createDefaultPolicyWarning,
 } from "../common/common";
+
+import { parseStackTrace } from "../common/stack_trace";
 
 const CSP_HEADER = "content-security-policy";
 const CSP_HEADER_REPORT_ONLY = "Content-Security-Policy-Report-Only";
 const TRUSTED_TYPES_DIRECTIVE = "require-trusted-types-for 'script'";
 
-var defaultPolicyData: DefaultPolicyData = {};
+var defaultPolicyWarning: DefaultPolicyWarning = createDefaultPolicyWarning(
+  "No warning yet.",
+  false,
+);
 var violationsPerTab: Record<string, Violations> = {};
 
 // Listens to the content script
 chrome.runtime.onMessage.addListener((msg: any, sender, sendResponse) => {
   switch (msg.type) {
     case "violationFound":
-      if (msg.violation && sender.tab && sender.tab.id) {
+      if (sender.tab && sender.tab.id) {
         const activeTabId = sender.tab.id;
         if (!(activeTabId in violationsPerTab)) {
           // Add an empty space in violationsPerTab for this tab id
@@ -41,11 +47,11 @@ chrome.runtime.onMessage.addListener((msg: any, sender, sendResponse) => {
         }
         // Create violation object
         var violation: Violation = new Violation(
-          msg.violation.data,
-          msg.violation.type,
-          msg.violation.timestamp,
-          msg.violation.stackTrace,
-          msg.violation.documentUrl,
+          msg.data,
+          msg.type,
+          msg.timestamp,
+          parseStackTrace(msg.unprocessedStackTrace),
+          msg.documentUrl,
         );
         // Add a violation to the corresponding tab id
         violationsPerTab[activeTabId].addViolation(violation);
@@ -60,17 +66,11 @@ chrome.runtime.onMessage.addListener((msg: any, sender, sendResponse) => {
         });
       }
       return true;
-    case "defaultPolicySet":
-      defaultPolicyData.wasSet = msg.defaultPolicySet;
+    case "defaultPolicyWarning":
+      defaultPolicyWarning = msg.defaultPolicyWarning;
       break;
-    case "defaultPolicyCreationFailed":
-      defaultPolicyData.creationFailed = msg.defaultPolicyCreationFailed;
-      break;
-    case "defaultPolicyOverwriteFailed":
-      defaultPolicyData.overwriteFailed = msg.defaultPolicyOverwriteFailed;
-      break;
-    case "getDefaultPolicyData":
-      sendResponse(defaultPolicyData);
+    case "getDefaultPolicyWarning":
+      sendResponse(defaultPolicyWarning);
       break;
   }
 });

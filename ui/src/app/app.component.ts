@@ -19,7 +19,7 @@
 import { Component } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import {
-  DefaultPolicyData,
+  DefaultPolicyWarning,
   Message,
   Violations,
   ViolationType,
@@ -51,11 +51,10 @@ export class AppComponent {
   message = 'No message yet.';
   isSuccess = false;
   violations: Violation[] = [];
-  defaultPolicyDataSubject = new BehaviorSubject<DefaultPolicyData | null>(
-    null,
-  );
-  defaultPolicyData$: Observable<DefaultPolicyData | null> =
-    this.defaultPolicyDataSubject.asObservable();
+  defaultPolicyWarningSubject =
+    new BehaviorSubject<DefaultPolicyWarning | null>(null);
+  defaultPolicyWarning$: Observable<DefaultPolicyWarning | null> =
+    this.defaultPolicyWarningSubject.asObservable();
 
   async getViolations() {
     const response = await this.getViolationDataFromLocalStorage();
@@ -98,10 +97,10 @@ export class AppComponent {
   }
 
   async updateDefaultPolicyData() {
-    const defaultPolicyData = await chrome.runtime.sendMessage({
-      type: 'getDefaultPolicyData',
+    const defaultPolicyWarning = await chrome.runtime.sendMessage({
+      type: 'getDefaultPolicyWarning',
     });
-    this.defaultPolicyDataSubject.next(defaultPolicyData);
+    this.defaultPolicyWarningSubject.next(defaultPolicyWarning);
   }
 
   ngOnInit() {

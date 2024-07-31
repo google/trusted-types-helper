@@ -1,7 +1,6 @@
-message-box {
-  padding: 10px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
+.message-box {
+  margin: 20px;
+  border: 2px solid #706f75;
 }
 
 .success {
