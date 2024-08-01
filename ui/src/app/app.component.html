@@ -21,7 +21,9 @@
       [defaultPolicyWarning]="defaultPolicyWarning$ | async"
     ></app-warning>
   </div>
-  <button (click)="getViolations()">Click me to see your violations!</button>
+  <button (click)="populateViolationsArray()">
+    Click me to see your violations!
+  </button>
   <div class="violation-cards">
     <app-violation
       *ngFor="let violation of violations"

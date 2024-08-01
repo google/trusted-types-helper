@@ -56,11 +56,15 @@ export class AppComponent {
   defaultPolicyWarning$: Observable<DefaultPolicyWarning | null> =
     this.defaultPolicyWarningSubject.asObservable();
 
-  async getViolations() {
+  async populateViolationsArray() {
     const response = await this.getViolationDataFromLocalStorage();
     const violations = this.giveProperTypings(response);
-    // Loop through all violation arrays in the "Violations" object
+    // Reset this.violations, otherwise we display repeated violation information
+    this.violations = [];
+    // Loop through all violation arrays in the Violations object
     for (const violationsType of Object.getOwnPropertyNames(violations)) {
+      // violationArray represents a list of violations for a single type
+      // of violation (HTML, script or script url)
       const violationArray = violations[violationsType as keyof Violations];
       if (violationArray && Array.isArray(violationArray)) {
         this.violations.push(...violationArray);
