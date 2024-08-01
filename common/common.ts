@@ -126,7 +126,7 @@ export interface ViolationData {
   data: string;
   type: ViolationType;
   timestamp: number;
-  uprocessedStackTrace: string;
+  unprocessedStackTrace: string;
   documentUrl: string;
 }
 
@@ -141,7 +141,7 @@ export function createViolationData(
     data: data,
     type: type,
     timestamp: timestamp,
-    uprocessedStackTrace: unprocessedStackTrace,
+    unprocessedStackTrace: unprocessedStackTrace,
     documentUrl: documentUrl,
   };
   return violationData;
@@ -183,7 +183,7 @@ export interface ViolationError {
 
 export interface ViolationFoundMessage {
   type: "violationFound";
-  violation: ViolationData | ViolationError;
+  violationData: ViolationData | ViolationError;
 }
 
 export interface ListViolationsCommand {

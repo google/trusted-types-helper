@@ -124,7 +124,7 @@ function createMessage(string: string, type: ViolationType): Message {
     // Todo: Make sure to surface this error in the ui
     const msg: Message = {
       type: "violationFound",
-      violation: {
+      violationData: {
         data: string,
         type: type,
         error: true,
@@ -136,7 +136,7 @@ function createMessage(string: string, type: ViolationType): Message {
 
   const msg: Message = {
     type: "violationFound",
-    violation: createViolationData(
+    violationData: createViolationData(
       string,
       type,
       Date.now(),
