@@ -87,6 +87,25 @@ export function isViolation(obj: any): obj is Violation {
   );
 }
 
+export interface TrustedTypesViolationCluster {
+  clusteredViolations: Violation[];
+  metadata: ClusterMetadata;
+}
+
+export interface ClusterMetadata {
+  // Unique ID for cluster
+  id: string;
+  // Human readable root cause information
+  rootCause: string;
+  // How many times we've seen this violation
+  count: number;
+  // last time we've seen this violation
+  lastOccurrence: Date;
+  // first time we saw this violation
+  firstOccurrence: Date;
+}
+
+
 // Checks whether 2 violations come from the same root cause, meaning they
 // share the unsafe call to the DOM sink
 export function haveSameRootCause(
