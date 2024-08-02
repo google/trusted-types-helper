@@ -112,7 +112,7 @@ describe('AppComponent', () => {
     const compiled = fixture.nativeElement as HTMLElement;
 
     // Trigger the event that will fetch and render the violations.
-    await fixture.componentInstance.getViolations();
+    await fixture.componentInstance.populateViolationsArray();
     fixture.detectChanges();
 
     // Make sure that the correct Chrome APIs were called

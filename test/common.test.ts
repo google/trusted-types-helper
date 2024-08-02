@@ -81,6 +81,25 @@ const scriptSrcStackTrace: StackTrace = {
   ],
 };
 
+const incompleteStackTrace: StackTrace = {
+  frames: [
+    "Error", // Skipped
+    "internalFunction1", // Skipped
+    "internalFunction2", // Skipped
+    "internalFUnction3", // Skipped
+  ],
+};
+
+const rootCauseFrameIsErrorStackTrace: StackTrace = {
+  frames: [
+    "Error", // Skipped
+    "internalFunction1", // Skipped
+    "internalFunction2", // Skipped
+    "internalFUnction3", // Skipped
+    "RootCause",
+  ],
+};
+
 describe("haveSameRootCause function", () => {
   it("clusters identical violations together", () => {
     const innerHtmlViolation: Violation = new Violation(
@@ -285,5 +304,40 @@ describe("haveSameRootCause function", () => {
     expect(
       haveSameRootCause(setAttributeViolation1, setAttributeViolation2),
     ).toBe(false);
+  });
+});
+
+describe("Violation's source file attribute logic", () => {
+  it("Gets the script url from the fifth stack frame", () => {
+    const innerHTMLViolation: Violation = new Violation(
+      "<b>my innerHTML payload</b>",
+      "HTML",
+      fakeTimestamp,
+      innerHTMLStackTrace,
+      "www.google.com/start",
+    );
+    expect(innerHTMLViolation.getSourceFile()).toBe("path/to/rootcause.js");
+  });
+
+  it("Leaves as undefined when there are less than 5 stack frames", () => {
+    const violation: Violation = new Violation(
+      "<div> adding a div </div>",
+      "HTML",
+      fakeTimestamp,
+      incompleteStackTrace, // Stack trace with only internal functions
+      "www.google.com/start",
+    );
+    expect(violation.getSourceFile()).toBe(undefined);
+  });
+
+  it("Leaves as undefined when the type of the root cause stack frame is a string", () => {
+    const violation: Violation = new Violation(
+      "www.myurl.com",
+      "HTML",
+      fakeTimestamp,
+      rootCauseFrameIsErrorStackTrace, // Stack trace with fifth stack frame as string
+      "www.google.com/start",
+    );
+    expect(violation.getSourceFile()).toBe(undefined);
   });
 });

@@ -37,10 +37,10 @@ export class Violation {
     this.timestamp = timestamp;
     this.stackTrace = stackTrace;
     this.documentUrl = documentUrl;
-    // Get source file from the scriptUrl field of the last element in the
-    // stack trace
-    if (stackTrace.frames && stackTrace.frames.length > 0) {
-      const lastFrame = stackTrace.frames[stackTrace.frames.length - 1];
+    // Get source file from the scriptUrl field of the fifth stack frame in the
+    // stack trace, that is, the first stack frame after the four we always skip.
+    if (stackTrace.frames && stackTrace.frames.length > 4) {
+      const lastFrame = stackTrace.frames[4];
       if (typeof lastFrame !== "string") {
         this.sourceFile = lastFrame.scriptUrl;
       }
@@ -104,7 +104,6 @@ export interface ClusterMetadata {
   // first time we saw this violation
   firstOccurrence: Date;
 }
-
 
 // Checks whether 2 violations come from the same root cause, meaning they
 // share the unsafe call to the DOM sink

@@ -65,7 +65,7 @@ describe('ViolationComponent', () => {
         'Error', // Skipped
         'internalFunction1', // Skipped
         'internalFunction2', // Skipped
-        'internalFUnction3', // Skipped
+        'internalFunction3', // Skipped
         stackFrame1,
         stackFrame2,
       ],
@@ -74,6 +74,35 @@ describe('ViolationComponent', () => {
     expect(formattedStackTrace).toEqual([
       '  at someFunction(path/to/external.js:10:1)\n',
       '  at anotherFunction(path/to/another.js:20:2)\n',
+    ]);
+  });
+
+  it('should generate correct messages when source file of violation is undefined.', () => {
+    // Create a mock violation object with mock data
+    const violation: Violation = new Violation(
+      'someData',
+      'HTML',
+      123456789,
+      {
+        frames: [
+          'Error', // Skipped
+          'internalFunction1', // Skipped
+          'internalFunction2', // Skipped
+          'internalFunction3', // Skipped
+          'internalFunction4', // No source file
+        ],
+      },
+      'https://example.com',
+    );
+    const messages = component.generateMessage(violation);
+    console.log(messages);
+    expect(messages).toEqual([
+      'Violation Type: HTML',
+      'Data passed into injection sink: someData',
+      'Stack Trace:',
+      'internalFunction4\n',
+      'Document URL: https://example.com',
+      'No source file available.',
     ]);
   });
 });

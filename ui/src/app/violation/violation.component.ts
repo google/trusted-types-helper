@@ -37,8 +37,15 @@ export class ViolationComponent {
       'Stack Trace:',
       ...this.generateStackTraceMessage(violation.getStackTrace()),
       `Document URL: ${violation.getDocumentUrl()}`,
-      `Source file of violation: ${violation.getSourceFile()}`,
     ];
+
+    // Check if getSourceFile is defined and add the message accordingly
+    if (violation.getSourceFile()) {
+      messages.push(`Source file of violation: ${violation.getSourceFile()}`);
+    } else {
+      messages.push('No source file available.');
+    }
+
     return messages;
   }
 
