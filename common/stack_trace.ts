@@ -31,7 +31,7 @@ export function parseStackTrace(stack: string): StackTrace {
   const lines = stack.split("\n");
 
   for (const line of lines) {
-    const fullMatch = line.match(/at\s+(\w+)\s+\((.+):(\d+):(\d+)\)/);
+    const fullMatch = line.match(/at\s+(\S+)\s+\((\S+):(\d+):(\d+)\)/);
     if (fullMatch) {
       const [, functionNameWithAt, scriptUrl, lineNumber, columnNumber] =
         fullMatch;
