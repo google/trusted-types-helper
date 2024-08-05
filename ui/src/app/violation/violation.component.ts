@@ -32,16 +32,16 @@ export class ViolationComponent {
    */
   generateMessage(violation: Violation): string[] {
     var messages = [
-      `Violation Type: ${violation.getType()}`,
-      `Data passed into injection sink: ${violation.getData()}`,
+      `Violation Type: ${violation.type}`,
+      `Data passed into injection sink: ${violation.data}`,
       'Stack Trace:',
-      ...this.generateStackTraceMessage(violation.getStackTrace()),
-      `Document URL: ${violation.getDocumentUrl()}`,
+      ...this.generateStackTraceMessage(violation.stackTrace),
+      `Document URL: ${violation.documentUrl}`,
     ];
 
     // Check if getSourceFile is defined and add the message accordingly
-    if (violation.getSourceFile()) {
-      messages.push(`Source file of violation: ${violation.getSourceFile()}`);
+    if (violation.sourceFile) {
+      messages.push(`Source file of violation: ${violation.sourceFile}`);
     } else {
       messages.push('No source file available.');
     }
@@ -110,10 +110,9 @@ export class ViolationComponent {
   ngOnInit() {
     if (this.violation) {
       this.violationMessages = this.generateMessage(this.violation);
-      this.timestamp = this.violation.getTimestamp();
-      this.violationType = this.violation.getType();
-      console.log('violationType: ', this.violationType);
-      this.getElapsedTime(this.violation.getTimestamp());
+      this.timestamp = this.violation.timestamp;
+      this.violationType = this.violation.type;
+      this.getElapsedTime(this.violation.timestamp);
     }
   }
 }

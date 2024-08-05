@@ -13,3 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+.container {
+  display: flex;
+  justify-content: flex-end;
+  margin-right: 20px;
+}
+
+.button {
+  margin-left: 20px;
+}

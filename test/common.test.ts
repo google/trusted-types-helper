@@ -15,33 +15,17 @@
  */
 
 import {
-  StackFrame,
-  StackTrace,
   Violation,
-  haveSameRootCause,
+  StackTrace,
+  StackFrame,
+  createViolation,
 } from "../common/common";
-
-//common constants to use for test cases below
 const fakeTimestamp: number = 123456789;
-
-const scriptSrcCallingStackFrame: StackFrame = {
-  functionName: "src",
-  scriptUrl: "path/to/rootcause.js",
-  lineNumber: 15,
-  columnNumber: 5,
-};
 
 const innerHTMLcallingStackFrame: StackFrame = {
   functionName: "innerHTML",
   scriptUrl: "path/to/rootcause.js",
   lineNumber: 10,
-  columnNumber: 1,
-};
-
-const setAttributeCallingStackFrame: StackFrame = {
-  functionName: "setAttribute",
-  scriptUrl: "path/to/rootcause.js",
-  lineNumber: 8,
   columnNumber: 1,
 };
 
@@ -52,31 +36,13 @@ const wrapperFunctionStackFrame: StackFrame = {
   columnNumber: 2,
 };
 
-const externalWrapperfunctionStackFrame: StackFrame = {
-  functionName: "anotherFunction",
-  scriptUrl: "https://cdn.example-website.com/base.js",
-  lineNumber: 20,
-  columnNumber: 2,
-};
-
 const innerHTMLStackTrace: StackTrace = {
   frames: [
     "Error", // Skipped
     "internalFunction1", // Skipped
     "internalFunction2", // Skipped
-    "internalFUnction3", // Skipped
+    "internalFunction3", // Skipped
     innerHTMLcallingStackFrame,
-    wrapperFunctionStackFrame,
-  ],
-};
-
-const scriptSrcStackTrace: StackTrace = {
-  frames: [
-    "Error", // Skipped
-    "internalFunction1", // Skipped
-    "internalFunction2", // Skipped
-    "internalFUnction3", // Skipped
-    scriptSrcCallingStackFrame,
     wrapperFunctionStackFrame,
   ],
 };
@@ -86,7 +52,7 @@ const incompleteStackTrace: StackTrace = {
     "Error", // Skipped
     "internalFunction1", // Skipped
     "internalFunction2", // Skipped
-    "internalFUnction3", // Skipped
+    "internalFunction3", // Skipped
   ],
 };
 
@@ -95,249 +61,42 @@ const rootCauseFrameIsErrorStackTrace: StackTrace = {
     "Error", // Skipped
     "internalFunction1", // Skipped
     "internalFunction2", // Skipped
-    "internalFUnction3", // Skipped
+    "internalFunction3", // Skipped
     "RootCause",
   ],
 };
 
-describe("haveSameRootCause function", () => {
-  it("clusters identical violations together", () => {
-    const innerHtmlViolation: Violation = new Violation(
-      "<b>my innerHTML payload</b>",
-      "HTML",
-      fakeTimestamp,
-      innerHTMLStackTrace,
-      "www.google.com/start",
-    );
-    expect(haveSameRootCause(innerHtmlViolation, innerHtmlViolation)).toBe(
-      true,
-    );
-  });
-
-  it("clusters violations with the same stack trace but different payloads", () => {
-    const innerHtmlViolation1: Violation = new Violation(
-      "<button>adding a button </button>",
-      "HTML",
-      fakeTimestamp,
-      innerHTMLStackTrace,
-      "www.google.com/start",
-    );
-    const innerHtmlViolation2: Violation = new Violation(
-      "<div> adding a div </div>",
-      "HTML",
-      fakeTimestamp,
-      innerHTMLStackTrace,
-      "www.google.com/start",
-    );
-    expect(haveSameRootCause(innerHtmlViolation1, innerHtmlViolation2)).toBe(
-      true,
-    );
-  });
-
-  it("clusters violations with the same first stack frame (DOM sink + source file)", () => {
-    const scriptSrcViolation1: Violation = new Violation(
-      "www.myurl.com",
-      "Script",
-      fakeTimestamp,
-      {
-        frames: [
-          "Error", // Skipped
-          "internalFunction1", // Skipped
-          "internalFunction2", // Skipped
-          "internalFUnction3", // Skipped
-          scriptSrcCallingStackFrame,
-          wrapperFunctionStackFrame,
-        ],
-      },
-      "www.google.com/about",
-    );
-    const scriptSrcViolation2: Violation = new Violation(
-      "www.anotherUrlPayload.com",
-      "Script",
-      fakeTimestamp,
-      {
-        frames: [
-          "Error", // Skipped
-          "internalFunction1", // Skipped
-          "internalFunction2", // Skipped
-          "internalFUnction3", // Skipped
-          scriptSrcCallingStackFrame,
-          externalWrapperfunctionStackFrame,
-        ],
-      },
-      "www.google.com/start",
-    );
-    expect(haveSameRootCause(scriptSrcViolation1, scriptSrcViolation2)).toBe(
-      true,
-    );
-  });
-
-  it("clusters violations with the same stack trace on different document URLs", () => {
-    const innerHTMLStackTrace: StackTrace = {
-      frames: [
-        "Error", // Skipped
-        "internalFunction1", // Skipped
-        "internalFunction2", // Skipped
-        "internalFUnction3", // Skipped
-        innerHTMLcallingStackFrame,
-        wrapperFunctionStackFrame,
-      ],
-    };
-    const innerHtmlViolation1: Violation = new Violation(
-      "<button>adding a button </button>",
-      "HTML",
-      fakeTimestamp,
-      innerHTMLStackTrace,
-      "www.google.com/start",
-    );
-    const innerHtmlViolation2: Violation = new Violation(
-      "<div> adding a div </div>",
-      "HTML",
-      fakeTimestamp,
-      innerHTMLStackTrace,
-      "www.google.com/about",
-    );
-
-    expect(haveSameRootCause(innerHtmlViolation1, innerHtmlViolation2)).toBe(
-      true,
-    );
-  });
-
-  it("doesn't cluster violations with different initial stack frames", () => {
-    const setAttributeViolation: Violation = new Violation(
-      "www.myurl.com",
-      "HTML",
-      fakeTimestamp,
-      {
-        frames: [
-          "Error", // Skipped
-          "internalFunction1", // Skipped
-          "internalFunction2", // Skipped
-          "internalFunction3", // Skipped
-          setAttributeCallingStackFrame,
-          wrapperFunctionStackFrame,
-        ],
-      },
-      "www.google.com/about",
-    );
-    const innerHtmlViolation: Violation = new Violation(
-      "www.myurl.com",
-      "HTML",
-      fakeTimestamp,
-      {
-        frames: [
-          "Error", // Skipped
-          "internalFunction1", // Skipped
-          "internalFunction2", // Skipped
-          "internalFUnction3", // Skipped
-          innerHTMLcallingStackFrame,
-          wrapperFunctionStackFrame,
-        ],
-      },
-      "www.google.com/about",
-    );
-
-    expect(haveSameRootCause(innerHtmlViolation, setAttributeViolation)).toBe(
-      false,
-    );
-  });
-
-  it("doesn't cluster violations with different ViolationTypes", () => {
-    const innerHtmlViolationWithUrlPayload: Violation = new Violation(
-      "www.myurl.com",
-      "HTML",
-      fakeTimestamp,
-      innerHTMLStackTrace,
-      "www.google.com/start",
-    );
-    const scriptSrcViolation: Violation = new Violation(
-      "www.myurl.com",
-      "Script",
-      fakeTimestamp,
-      scriptSrcStackTrace,
-      "www.google.com/about",
-    );
-    expect(
-      haveSameRootCause(scriptSrcViolation, innerHtmlViolationWithUrlPayload),
-    ).toBe(false);
-  });
-
-  it("doesn't cluster violations with same function name but differnt columnn/line numbers", () => {
-    const anotherSetAttributeCallingStackFrame: StackFrame = {
-      functionName: "setAttribute",
-      scriptUrl: "path/to/rootcause.js",
-      lineNumber: 25,
-      columnNumber: 5,
-    };
-    const setAttributeViolation1: Violation = new Violation(
-      "www.myurl.com",
-      "Script",
-      fakeTimestamp,
-      {
-        frames: [
-          "Error", // Skipped
-          "internalFunction1", // Skipped
-          "internalFunction2", // Skipped
-          "internalFUnction3", // Skipped
-          setAttributeCallingStackFrame,
-          wrapperFunctionStackFrame,
-        ],
-      },
-      "www.google.com/about",
-    );
-    const setAttributeViolation2: Violation = new Violation(
-      "www.myurl.com",
-      "Script",
-      fakeTimestamp,
-      {
-        frames: [
-          "Error", // Skipped
-          "internalFunction1", // Skipped
-          "internalFunction2", // Skipped
-          "internalFUnction3", // Skipped
-          anotherSetAttributeCallingStackFrame,
-          wrapperFunctionStackFrame,
-        ],
-      },
-      "www.google.com/about",
-    );
-    expect(
-      haveSameRootCause(setAttributeViolation1, setAttributeViolation2),
-    ).toBe(false);
-  });
-});
-
 describe("Violation's source file attribute logic", () => {
   it("Gets the script url from the fifth stack frame", () => {
-    const innerHTMLViolation: Violation = new Violation(
+    const innerHTMLViolation: Violation = createViolation(
       "<b>my innerHTML payload</b>",
       "HTML",
       fakeTimestamp,
       innerHTMLStackTrace,
       "www.google.com/start",
     );
-    expect(innerHTMLViolation.getSourceFile()).toBe("path/to/rootcause.js");
+    expect(innerHTMLViolation.sourceFile).toBe("path/to/rootcause.js");
   });
 
   it("Leaves as undefined when there are less than 5 stack frames", () => {
-    const violation: Violation = new Violation(
+    const violation: Violation = createViolation(
       "<div> adding a div </div>",
       "HTML",
       fakeTimestamp,
       incompleteStackTrace, // Stack trace with only internal functions
       "www.google.com/start",
     );
-    expect(violation.getSourceFile()).toBe(undefined);
+    expect(violation.sourceFile).toBe(undefined);
   });
 
   it("Leaves as undefined when the type of the root cause stack frame is a string", () => {
-    const violation: Violation = new Violation(
+    const violation: Violation = createViolation(
       "www.myurl.com",
       "HTML",
       fakeTimestamp,
       rootCauseFrameIsErrorStackTrace, // Stack trace with fifth stack frame as string
       "www.google.com/start",
     );
-    expect(violation.getSourceFile()).toBe(undefined);
+    expect(violation.sourceFile).toBe(undefined);
   });
 });

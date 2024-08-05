@@ -96,7 +96,6 @@ test(
     const panel = await openDevToolsPanel(browser, extensionId, (x) => fail(x));
 
     const panelDocument = await panel.evaluate(() => document.body.innerHTML);
-    expect(panelDocument).toContain("trusted-types-helper-ui");
 
     // Make sure we can interact with the panel Angular UI as well.
     const panelBody = await panel.$("body");

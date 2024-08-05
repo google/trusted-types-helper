@@ -15,12 +15,15 @@
  */
 
 /// <reference types="chrome"/>
+import { createOrUpdateCluster } from "../common/cluster";
 import {
   Message,
   Violation,
-  Violations,
+  ViolationsByTypes,
   DefaultPolicyWarning,
   createDefaultPolicyWarning,
+  TrustedTypesViolationCluster,
+  createViolation,
 } from "../common/common";
 
 import { parseStackTrace } from "../common/stack_trace";
@@ -33,7 +36,6 @@ var defaultPolicyWarning: DefaultPolicyWarning = createDefaultPolicyWarning(
   "No warning yet.",
   false,
 );
-var violationsPerTab: Record<string, Violations> = {};
 
 // Listens to the content script
 chrome.runtime.onMessage.addListener((msg: any, sender, sendResponse) => {
@@ -41,28 +43,51 @@ chrome.runtime.onMessage.addListener((msg: any, sender, sendResponse) => {
     case "violationFound":
       if (sender.tab && sender.tab.id) {
         const activeTabId = sender.tab.id;
-        if (!(activeTabId in violationsPerTab)) {
-          // Add an empty space in violationsPerTab for this tab id
-          violationsPerTab[activeTabId] = new Violations();
-        }
-        // Create violation object
-        var violation: Violation = new Violation(
-          msg.violationData.data,
-          msg.violationData.type,
-          msg.violationData.timestamp,
-          parseStackTrace(msg.violationData.unprocessedStackTrace),
-          msg.violationData.documentUrl,
+
+        // Retrieve violation clusters for this tab from local storage
+        chrome.storage.local.get(
+          activeTabId.toString(),
+          (violationClustersPerTab) => {
+            var existingClusters: TrustedTypesViolationCluster[] = [];
+            if (activeTabId in violationClustersPerTab) {
+              // Add a violation to the corresponding tab id
+              existingClusters = violationClustersPerTab[activeTabId];
+            }
+
+            // Store updated violation clusters for the tab in local storage
+            chrome.storage.local.set({
+              [activeTabId]: createOrUpdateCluster(
+                existingClusters,
+                createViolation(
+                  msg.violationData.data,
+                  msg.violationData.type,
+                  msg.violationData.timestamp,
+                  parseStackTrace(msg.violationData.unprocessedStackTrace),
+                  msg.violationData.documentUrl,
+                ),
+              ),
+            });
+          },
         );
-        // Add a violation to the corresponding tab id
-        violationsPerTab[activeTabId].addViolation(violation);
-        // Store all violations for all tabs in local storage
-        chrome.storage.local.set(violationsPerTab);
       }
       break;
-    case "listViolations":
+    case "listViolationsByClusters":
       if (msg.inspectedTabId) {
         chrome.storage.local.get(msg.inspectedTabId.toString(), (result) => {
           sendResponse(result[msg.inspectedTabId]);
+        });
+      }
+      return true;
+    case "listViolationsByTypes":
+      if (msg.inspectedTabId) {
+        chrome.storage.local.get(msg.inspectedTabId.toString(), (result) => {
+          var violationsByType: ViolationsByTypes = new ViolationsByTypes();
+          for (const cluster of result[msg.inspectedTabId]) {
+            for (const violation of cluster.clusteredViolations) {
+              violationsByType.addViolation(violation);
+            }
+          }
+          sendResponse(violationsByType);
         });
       }
       return true;
