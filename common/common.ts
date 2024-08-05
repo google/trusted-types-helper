@@ -13,78 +13,48 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import { NUMBER_OF_EXTENSION_INTERNAL_STACK_FRAMES } from "../common/stack_trace";
 
 export type ViolationType = "HTML" | "Script" | "URL";
 
-// TODO: Update the type guard below if this type is updated
-export class Violation {
-  private data: string;
-  private type: ViolationType;
-  private timestamp: number;
-  private stackTrace: StackTrace;
-  private documentUrl: string;
-  private sourceFile?: string;
+export interface Violation {
+  data: string;
+  type: ViolationType;
+  timestamp: number;
+  stackTrace: StackTrace;
+  documentUrl: string;
+  sourceFile?: string;
+}
 
-  public constructor(
-    data: string,
-    type: ViolationType,
-    timestamp: number,
-    stackTrace: StackTrace,
-    documentUrl: string,
+export function createViolation(
+  data: string,
+  type: ViolationType,
+  timestamp: number,
+  stackTrace: StackTrace,
+  documentUrl: string,
+): Violation {
+  const baseViolation: Violation = {
+    data,
+    type,
+    timestamp,
+    stackTrace,
+    documentUrl,
+  };
+
+  // Get source file from the scriptUrl field of the fifth stack frame in the
+  // stack trace, that is, the first stack frame after the four we always skip.
+  if (
+    stackTrace.frames &&
+    stackTrace.frames.length > NUMBER_OF_EXTENSION_INTERNAL_STACK_FRAMES
   ) {
-    this.data = data;
-    this.type = type;
-    this.timestamp = timestamp;
-    this.stackTrace = stackTrace;
-    this.documentUrl = documentUrl;
-    // Get source file from the scriptUrl field of the fifth stack frame in the
-    // stack trace, that is, the first stack frame after the four we always skip.
-    if (stackTrace.frames && stackTrace.frames.length > 4) {
-      const lastFrame = stackTrace.frames[4];
-      if (typeof lastFrame !== "string") {
-        this.sourceFile = lastFrame.scriptUrl;
-      }
+    const lastFrame =
+      stackTrace.frames[NUMBER_OF_EXTENSION_INTERNAL_STACK_FRAMES];
+    if (typeof lastFrame !== "string") {
+      baseViolation.sourceFile = lastFrame.scriptUrl;
     }
   }
 
-  // This setter is used for testing purposes only
-  public setSourceFile(sourceFile: string): void {
-    this.sourceFile = sourceFile;
-  }
-  public getData(): string {
-    return this.data;
-  }
-
-  public getType(): ViolationType {
-    return this.type;
-  }
-
-  public getTimestamp(): number {
-    return this.timestamp;
-  }
-
-  public getStackTrace(): StackTrace {
-    return this.stackTrace;
-  }
-
-  public getDocumentUrl(): string {
-    return this.documentUrl;
-  }
-
-  public getSourceFile(): string | undefined {
-    return this.sourceFile;
-  }
-}
-
-// TODO: Update this type guard if the type above is updated
-export function isViolation(obj: any): obj is Violation {
-  return (
-    obj &&
-    obj.data?.type === "string" &&
-    obj.timestamp instanceof Date &&
-    obj.type?.type === "string" &&
-    ["HTML", "Script", "URL"].includes(obj.type)
-  );
+  return baseViolation;
 }
 
 export interface TrustedTypesViolationCluster {
@@ -103,16 +73,6 @@ export interface ClusterMetadata {
   lastOccurrence: Date;
   // first time we saw this violation
   firstOccurrence: Date;
-}
-
-// Checks whether 2 violations come from the same root cause, meaning they
-// share the unsafe call to the DOM sink
-export function haveSameRootCause(
-  violation1: Violation,
-  violation2: Violation,
-): boolean {
-  // TODO(mayrarobles)
-  return false;
 }
 
 /**
@@ -150,7 +110,7 @@ export type ViolationDataType = {
   [key in ViolationType]: Array<Violation>;
 };
 
-export class Violations implements ViolationDataType {
+export class ViolationsByTypes implements ViolationDataType {
   public HTML: Array<Violation> = [];
   public Script: Array<Violation> = [];
   public URL: Array<Violation> = [];
@@ -158,7 +118,7 @@ export class Violations implements ViolationDataType {
   constructor() {}
 
   public addViolation(violation: Violation) {
-    switch (violation.getType()) {
+    switch (violation.type) {
       case "HTML":
         this.HTML.push(violation);
         break;
@@ -169,7 +129,7 @@ export class Violations implements ViolationDataType {
         this.URL.push(violation);
         break;
       default:
-        console.error(`Unknown violation type: ${violation.getType()}`);
+        console.error(`Unknown violation type: ${violation.type}`);
     }
   }
 }
@@ -190,6 +150,16 @@ export interface ListViolationsCommand {
   inspectedTabId: number;
 }
 
+export interface ListViolationsByClusterCommand {
+  type: "listViolationsByCluster";
+  inspectedTabId: number;
+}
+
+export interface ListViolationsByTypesCommand {
+  type: "listViolationsByType";
+  inspectedTabId: number;
+}
+
 export interface DefaultPolicyWarningMessage {
   type: "defaultPolicyWarning";
   defaultPolicyWarning: DefaultPolicyWarning;
@@ -206,6 +176,8 @@ export interface GetDefaultPolicyWarningCommand {
 export type Message =
   | ViolationFoundMessage
   | ListViolationsCommand
+  | ListViolationsByClusterCommand
+  | ListViolationsByTypesCommand
   | DefaultPolicyWarningMessage
   | GetDefaultPolicyWarningCommand;
 
@@ -215,6 +187,8 @@ export function isMessage(obj: any): obj is Message {
     "type" in obj &&
     (obj.type === "violationFound" ||
       obj.type === "listViolations" ||
+      obj.type === "listViolationsByClusters" ||
+      obj.type === "listViolationsByTypes" ||
       obj.type === "defaultPolicyWarning" ||
       obj.type === "getDefaultPolicyWarning")
   );

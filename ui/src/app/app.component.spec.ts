@@ -22,6 +22,7 @@ import {
   Violation,
   StackFrameOrError,
   Message,
+  createViolation,
 } from '../../../common/common';
 
 describe('AppComponent', () => {
@@ -32,11 +33,23 @@ describe('AppComponent', () => {
     // Violation but Violation should really be an interface (because a class
     // wouldn't survive being stringified and then un-stringified).
     HTML: [
-      new Violation('foobar', 'HTML', Date.now(), { frames }, 'someSourceFile'),
-      new Violation('bizbaz', 'HTML', Date.now(), { frames }, 'someSourceFile'),
+      createViolation(
+        'foobar',
+        'HTML',
+        Date.now(),
+        { frames },
+        'someSourceFile',
+      ),
+      createViolation(
+        'bizbaz',
+        'HTML',
+        Date.now(),
+        { frames },
+        'someSourceFile',
+      ),
     ],
     Script: [
-      new Violation(
+      createViolation(
         'alert(1)',
         'Script',
         Date.now(),
@@ -45,7 +58,7 @@ describe('AppComponent', () => {
       ),
     ],
     URL: [
-      new Violation(
+      createViolation(
         'https://www.google.com/',
         'URL',
         Date.now(),
@@ -94,16 +107,6 @@ describe('AppComponent', () => {
   it(`should have the 'trusted-types-helper-ui' title`, () => {
     const fixture = TestBed.createComponent(AppComponent);
     const app = fixture.componentInstance;
-    expect(app.title).toEqual('trusted-types-helper-ui');
-  });
-
-  it('should render title', () => {
-    const fixture = TestBed.createComponent(AppComponent);
-    fixture.detectChanges();
-    const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.querySelector('h1')?.textContent).toContain(
-      'trusted-types-helper-ui',
-    );
   });
 
   it('should render violations data', async () => {
@@ -112,7 +115,7 @@ describe('AppComponent', () => {
     const compiled = fixture.nativeElement as HTMLElement;
 
     // Trigger the event that will fetch and render the violations.
-    await fixture.componentInstance.populateViolationsArray();
+    await fixture.componentInstance.populateViolations();
     fixture.detectChanges();
 
     // Make sure that the correct Chrome APIs were called
@@ -134,13 +137,8 @@ describe('AppComponent', () => {
       for (const violation of listViolationsResponse[
         violationType as keyof ViolationDataType
       ]) {
-        expect(allRenderedMessages).toContain(violation.getData());
-        // expect(allRenderedMessages).toContain(
-        //   // TODO: Change this if we come up with a way to display timestamps
-        //   // more nicely.
-        //   violation.getTimestamp().toString(),
-        // );
-        expect(allRenderedMessages).toContain(violation.getType());
+        expect(allRenderedMessages).toContain(violation.data);
+        expect(allRenderedMessages).toContain(violation.type);
       }
     }
   });

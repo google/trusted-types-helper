@@ -13,7 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { StackTrace, StackFrameOrError } from "./common";
+import { StackTrace, StackFrame, StackFrameOrError } from "./common";
+/**
+ * The first line is the word "Error" and the next three lines are calls to
+ *  functions internal to the extension:"getStackTrace", "createMessage" and
+ * either "createHTML", "createScript" or "createUrl".
+ */
+export const NUMBER_OF_EXTENSION_INTERNAL_STACK_FRAMES: number = 4;
 
 /**
  * Parses a stack trace string into a StackTrace object.
@@ -61,4 +67,29 @@ export function parseStackTrace(stack: string): StackTrace {
   }
 
   return { frames };
+}
+
+export function isStackFrame(obj: any): obj is StackFrame {
+  return (
+    typeof obj === "object" &&
+    obj !== null &&
+    typeof obj.scriptUrl === "string" &&
+    typeof obj.lineNumber === "number" &&
+    typeof obj.columnNumber === "number" &&
+    (obj.functionName === undefined || typeof obj.functionName === "string")
+  );
+}
+
+export function getFirstValidStackFrame(
+  stackTrace: StackTrace,
+): StackFrameOrError {
+  if (stackTrace.frames.length > NUMBER_OF_EXTENSION_INTERNAL_STACK_FRAMES) {
+    // The first 4 lines are skipped because the first line is the word "Error"
+    // and the next three lines are calls to functions internal to the
+    // extension:"getStackTrace", "createMessage" and either "createHTML",
+    // "createScript" or "createUrl". So the stack trace must have at least 5
+    // lines to look at the first valid stack frame
+    return stackTrace.frames[4];
+  }
+  return "No valid first stack frame";
 }

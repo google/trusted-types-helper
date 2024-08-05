@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 import { TrustedTypesViolationCluster, Violation } from "./common";
+import { isStackFrame, getFirstValidStackFrame } from "../common/stack_trace";
 
-function createOrUpdateCluster(
+export function createOrUpdateCluster(
   existingClusters: TrustedTypesViolationCluster[],
   newViolation: Violation,
 ): TrustedTypesViolationCluster[] {
@@ -59,6 +60,49 @@ export function belongsToCluster(
   cluster: TrustedTypesViolationCluster,
   violation: Violation,
 ): boolean {
-  // TODO(mayrarobles)
+  // Check if the violation stack trace shares the same root cause with the
+  // first existing violation in the cluster.
+  return haveSameRootCause(violation, cluster.clusteredViolations[0]);
+}
+
+/**
+ * Checks whether 2 violations come from the same root cause, meaning they
+ * share the unsafe call to the DOM sink.
+ *
+ * @param violation1
+ * @param violation2
+ * @returns
+ */
+export function haveSameRootCause(
+  violation1: Violation,
+  violation2: Violation,
+): boolean {
+  debugger;
+  const stackFrame1 = getFirstValidStackFrame(violation1.stackTrace);
+  const stackFrame2 = getFirstValidStackFrame(violation2.stackTrace);
+
+  // Handling when getFirstValidStackFrame returns error
+  if (
+    stackFrame1 == "No valid first stack frame" ||
+    stackFrame2 == "No valid first stack frame"
+  ) {
+    return false;
+  }
+
+  if (isStackFrame(stackFrame1) && isStackFrame(stackFrame2)) {
+    // Option 1: Check that the violations have the same violation source file,
+    // line number and column number
+    return (
+      stackFrame1.lineNumber == stackFrame2.lineNumber &&
+      stackFrame1.columnNumber == stackFrame2.columnNumber
+    );
+  } else if (
+    typeof stackFrame1 === "string" &&
+    typeof stackFrame2 === "string"
+  ) {
+    // Option 2: Check that the first stack frame is the same
+    return stackFrame1 == stackFrame2;
+  }
+
   return false;
 }

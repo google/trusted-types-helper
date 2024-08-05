@@ -21,7 +21,7 @@ import { RouterOutlet } from '@angular/router';
 import {
   DefaultPolicyWarning,
   Message,
-  Violations,
+  ViolationsByTypes,
   ViolationType,
   Violation,
   ViolationDataType,
@@ -31,6 +31,11 @@ import { NgClass, NgFor, CommonModule } from '@angular/common';
 import { ViolationComponent } from './violation/violation.component';
 import { WarningComponent } from './warning/warning.component';
 import { BehaviorSubject, Observable } from 'rxjs';
+import { FormsModule } from '@angular/forms';
+import { MatInputModule } from '@angular/material/input';
+import { MatSelectModule } from '@angular/material/select';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { TrustedTypesViolationCluster } from '../../../common/common';
 
 @Component({
   selector: 'app-root',
@@ -42,62 +47,56 @@ import { BehaviorSubject, Observable } from 'rxjs';
     ViolationComponent,
     WarningComponent,
     CommonModule,
+    MatFormFieldModule,
+    MatSelectModule,
+    MatInputModule,
+    FormsModule,
   ],
   templateUrl: './app.component.html',
   styleUrl: './app.component.css',
 })
 export class AppComponent {
-  title = 'trusted-types-helper-ui';
   message = 'No message yet.';
   isSuccess = false;
-  violations: Violation[] = [];
+  private populateViolationsInterval: any;
+  violationsByTypes: ViolationsByTypes = new ViolationsByTypes();
+  violationsByClusters: TrustedTypesViolationCluster[] = [];
   defaultPolicyWarningSubject =
     new BehaviorSubject<DefaultPolicyWarning | null>(null);
   defaultPolicyWarning$: Observable<DefaultPolicyWarning | null> =
     this.defaultPolicyWarningSubject.asObservable();
+  selectedMode = 'byClusters'; // Default viewing mode
 
-  async populateViolationsArray() {
+  async populateViolations() {
     const response = await this.getViolationDataFromLocalStorage();
-    const violations = this.giveProperTypings(response);
-    // Reset this.violations, otherwise we display repeated violation information
-    this.violations = [];
-    // Loop through all violation arrays in the Violations object
-    for (const violationsType of Object.getOwnPropertyNames(violations)) {
-      // violationArray represents a list of violations for a single type
-      // of violation (HTML, script or script url)
-      const violationArray = violations[violationsType as keyof Violations];
-      if (violationArray && Array.isArray(violationArray)) {
-        this.violations.push(...violationArray);
+    debugger;
+    if (this.selectedMode == 'byClusters') {
+      this.violationsByClusters = response;
+    } else if (this.selectedMode == 'byTypes') {
+      var processedViolationsByType: ViolationsByTypes =
+        new ViolationsByTypes();
+      for (const violationGroup of Object.getOwnPropertyNames(response)) {
+        for (const violation of response[
+          violationGroup as keyof ViolationDataType
+        ]) {
+          processedViolationsByType.addViolation(violation);
+        }
       }
+      this.violationsByTypes = processedViolationsByType;
     }
   }
 
   async getViolationDataFromLocalStorage() {
+    var command = 'listViolationsByClusters';
+    if (this.selectedMode == 'byTypes') {
+      command = 'listViolationsByTypes';
+    }
     const response = await chrome.runtime.sendMessage({
-      type: 'listViolations',
+      type: command,
       inspectedTabId: chrome.devtools.inspectedWindow.tabId,
     });
+
     return response;
-  }
-
-  giveProperTypings(response: ViolationDataType): Violations {
-    var violationsPerTab: Violations = new Violations();
-    for (const violationGroup of Object.getOwnPropertyNames(response)) {
-      for (const violation of response[
-        violationGroup as keyof ViolationDataType
-      ]) {
-        const violationWithRightTyping = new Violation(
-          violation['data'],
-          violation['type'],
-          violation['timestamp'],
-          violation['stackTrace'],
-          violation['documentUrl'],
-        );
-        violationsPerTab.addViolation(violationWithRightTyping);
-      }
-    }
-
-    return violationsPerTab;
   }
 
   async updateDefaultPolicyData() {
@@ -108,6 +107,11 @@ export class AppComponent {
   }
 
   ngOnInit() {
+    console.log('This is after violation is interface');
     this.updateDefaultPolicyData();
+    // Start interval to call populateViolations()
+    this.populateViolationsInterval = setInterval(() => {
+      this.populateViolations();
+    }, 500);
   }
 }
