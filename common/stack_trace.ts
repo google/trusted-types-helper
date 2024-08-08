@@ -89,7 +89,18 @@ export function getFirstValidStackFrame(
     // extension:"getStackTrace", "createMessage" and either "createHTML",
     // "createScript" or "createUrl". So the stack trace must have at least 5
     // lines to look at the first valid stack frame
-    return stackTrace.frames[4];
+    return stackTrace.frames[NUMBER_OF_EXTENSION_INTERNAL_STACK_FRAMES];
   }
   return "No valid first stack frame";
+}
+
+export function getRootCause(stackTrace: StackTrace): string {
+  const frame: StackFrameOrError = getFirstValidStackFrame(stackTrace);
+  if (typeof frame === "string") {
+    return frame;
+  } else if (frame.functionName) {
+    return `${frame.functionName} (${frame.scriptUrl}:${frame.lineNumber}:${frame.columnNumber})`;
+  } else {
+    return `${frame.scriptUrl}:${frame.lineNumber}:${frame.columnNumber}`;
+  }
 }

@@ -47,10 +47,10 @@ export function createViolation(
     stackTrace.frames &&
     stackTrace.frames.length > NUMBER_OF_EXTENSION_INTERNAL_STACK_FRAMES
   ) {
-    const lastFrame =
+    const firstValidFrame =
       stackTrace.frames[NUMBER_OF_EXTENSION_INTERNAL_STACK_FRAMES];
-    if (typeof lastFrame !== "string") {
-      baseViolation.sourceFile = lastFrame.scriptUrl;
+    if (typeof firstValidFrame !== "string") {
+      baseViolation.sourceFile = firstValidFrame.scriptUrl;
     }
   }
 
@@ -69,10 +69,10 @@ export interface ClusterMetadata {
   rootCause: string;
   // How many times we've seen this violation
   count: number;
-  // last time we've seen this violation
-  lastOccurrence: Date;
-  // first time we saw this violation
-  firstOccurrence: Date;
+  // last time we've seen this violation, in milliseconds since epoch
+  lastOccurrence: number;
+  // first time we saw this violation, in milliseconds since epoch
+  firstOccurrence: number;
 }
 
 /**
@@ -110,28 +110,30 @@ export type ViolationDataType = {
   [key in ViolationType]: Array<Violation>;
 };
 
-export class ViolationsByTypes implements ViolationDataType {
-  public HTML: Array<Violation> = [];
-  public Script: Array<Violation> = [];
-  public URL: Array<Violation> = [];
+export interface ViolationsByTypes {
+  HTML: Array<Violation>;
+  Script: Array<Violation>;
+  URL: Array<Violation>;
+}
 
-  constructor() {}
-
-  public addViolation(violation: Violation) {
-    switch (violation.type) {
-      case "HTML":
-        this.HTML.push(violation);
-        break;
-      case "Script":
-        this.Script.push(violation);
-        break;
-      case "URL":
-        this.URL.push(violation);
-        break;
-      default:
-        console.error(`Unknown violation type: ${violation.type}`);
-    }
+export function addViolationByType(
+  violation: Violation,
+  violationsByTypes: ViolationsByTypes,
+): ViolationsByTypes {
+  switch (violation.type) {
+    case "HTML":
+      violationsByTypes.HTML.push(violation);
+      break;
+    case "Script":
+      violationsByTypes.Script.push(violation);
+      break;
+    case "URL":
+      violationsByTypes.URL.push(violation);
+      break;
+    default:
+      console.error(`Unknown violation type: ${violation.type}`);
   }
+  return violationsByTypes;
 }
 
 export interface ViolationError {

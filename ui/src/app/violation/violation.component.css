@@ -1,10 +1,31 @@
 .violation-card {
-  margin: 20px;
-  border: 2px solid green;
+  margin: 3px;
 }
 
 .card-actions-container {
   position: absolute;
   top: 10px;
   right: 15px;
+}
+
+.code-block {
+  padding: 0px;
+  font-family: monospace;
+  white-space: pre;
+}
+
+.highlight {
+  font-weight: bold;
+  color: #4b4a4a;
+}
+
+.time {
+  position: absolute;
+  top: 10px;
+  right: 15px;
+}
+
+.data {
+  text-align: center;
+  margin: 0 auto;
 }

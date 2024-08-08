@@ -1,53 +1,43 @@
-import { Component, Input } from '@angular/core';
+import {
+  Component,
+  Input,
+  ChangeDetectionStrategy,
+  signal,
+} from '@angular/core';
 import {
   StackTrace,
   Violation,
   ViolationType,
 } from '../../../../common/common';
-import { NgFor, NgClass } from '@angular/common';
+import { NgFor, NgClass, NgIf } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
+import { MatChipsModule } from '@angular/material/chips';
+import { MatExpansionModule } from '@angular/material/expansion';
 
 @Component({
   selector: 'app-violation',
   standalone: true,
-  imports: [NgFor, NgClass, MatCardModule],
+  imports: [
+    NgFor,
+    NgClass,
+    NgIf,
+    MatCardModule,
+    MatChipsModule,
+    MatExpansionModule,
+  ],
   templateUrl: './violation.component.html',
   styleUrl: './violation.component.css',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ViolationComponent {
+  readonly panelOpenState = signal(false);
   @Input()
   violation: Violation | undefined = undefined;
-  violationMessages: string[] = [];
-  timestamp: number = 0; // remove later
+  @Input()
+  isFirstViolation = false;
   elapsedTime: string = '';
-  violationType: string = '';
   stackTraceLines: string[] = [];
-
-  /**
-   * Generates an array of messages describing a given violation.
-   *
-   * @param {Violation} violation - The violation object to generate messages for.
-   * @returns {string[]} - An array of strings containing the generated messages.
-   *
-   */
-  generateMessage(violation: Violation): string[] {
-    var messages = [
-      `Violation Type: ${violation.type}`,
-      `Data passed into injection sink: ${violation.data}`,
-      'Stack Trace:',
-      ...this.generateStackTraceMessage(violation.stackTrace),
-      `Document URL: ${violation.documentUrl}`,
-    ];
-
-    // Check if getSourceFile is defined and add the message accordingly
-    if (violation.sourceFile) {
-      messages.push(`Source file of violation: ${violation.sourceFile}`);
-    } else {
-      messages.push('No source file available.');
-    }
-
-    return messages;
-  }
+  chipColor = '#D3D3D3';
 
   /**
    * Generates a formatted stack trace message from the provided stack trace
@@ -74,7 +64,7 @@ export class ViolationComponent {
         stackTraceLines.push(`${frame}\n`);
       } else if (frame.functionName) {
         stackTraceLines.push(
-          `  at ${frame.functionName}(${frame.scriptUrl}:${frame.lineNumber}:${frame.columnNumber})\n`,
+          `  at ${frame.functionName} (${frame.scriptUrl}:${frame.lineNumber}:${frame.columnNumber})\n`,
         );
       } else {
         // No function name, no parenthesis
@@ -83,13 +73,11 @@ export class ViolationComponent {
         );
       }
     }
-
     return stackTraceLines;
   }
 
-  getElapsedTime(currentTime: number): void {
+  getElapsedTime(currentTime: number): string {
     const now: number = Date.now();
-    console.log('Date of time of violation: ', currentTime);
     const difference: number = now - currentTime;
 
     const seconds = Math.floor(difference / 1000);
@@ -97,22 +85,34 @@ export class ViolationComponent {
 
     if (minutes === 0) {
       // Less than a minute
-      this.elapsedTime = 'just now';
+      return 'just now';
     } else if (minutes === 1) {
-      this.elapsedTime = 'A minute ago';
+      return 'A minute ago';
     } else if (minutes < 60) {
-      this.elapsedTime = `${minutes} minutes ago`;
+      return `${minutes} minutes ago`;
     } else {
-      this.elapsedTime = 'more than an hour ago';
+      return 'more than an hour ago';
     }
+  }
+
+  getChipColor(type: ViolationType): string {
+    if (type == 'HTML') {
+      return '#C5DCA0'; // Light green
+    } else if (type == 'Script') {
+      return '#F2EEA0'; // Light yellow
+    } else if (type == 'URL') {
+      return '#F9DAD0'; // Light red
+    }
+    return '#D3D3D3'; // Gray
   }
 
   ngOnInit() {
     if (this.violation) {
-      this.violationMessages = this.generateMessage(this.violation);
-      this.timestamp = this.violation.timestamp;
-      this.violationType = this.violation.type;
-      this.getElapsedTime(this.violation.timestamp);
+      this.stackTraceLines = this.generateStackTraceMessage(
+        this.violation.stackTrace,
+      );
+      this.elapsedTime = this.getElapsedTime(this.violation.timestamp);
+      this.chipColor = this.getChipColor(this.violation.type);
     }
   }
 }

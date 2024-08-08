@@ -19,46 +19,40 @@
     <app-warning
       [defaultPolicyWarning]="defaultPolicyWarning$ | async"
     ></app-warning>
-  </div>
-  <div class="container">
-    <mat-form-field>
-      <mat-label>Modes of viewing</mat-label>
-      <select matNativeControl [(ngModel)]="selectedMode">
-        <option value="byClusters">By Clusters</option>
-        <option value="byTypes">By Types</option>
-      </select>
-    </mat-form-field>
-  </div>
-  <div *ngIf="selectedMode === 'byClusters'">
-    <div class="violation-cards">
-      <h4>In clusters mode!</h4>
-      <div *ngFor="let cluster of violationsByClusters; let i = index">
-        <h2>Cluster {{ i + 1 }}</h2>
-        <app-violation
-          *ngFor="let violation of cluster.clusteredViolations"
-          [violation]="violation"
-        ></app-violation>
+
+    <mat-button-toggle-group
+      [(ngModel)]="selectedViewMode"
+      aria-label="View Mode"
+      (change)="populateViolations()"
+      class="button"
+    >
+      <mat-button-toggle value="byClusters">By Clusters</mat-button-toggle>
+      <mat-button-toggle value="byTypes">By Types</mat-button-toggle>
+    </mat-button-toggle-group>
+
+    <div *ngIf="selectedViewMode === 'byClusters'">
+      <div class="violation-cards">
+        <div *ngFor="let cluster of violationsByClusters">
+          <app-cluster [cluster]="cluster"></app-cluster>
+        </div>
       </div>
     </div>
-  </div>
-  <div *ngIf="selectedMode === 'byTypes'">
-    <h4>In types mode!</h4>
-    <div class="violation-cards">
-      <h2>HTML Violations</h2>
-      <app-violation
-        *ngFor="let violation of violationsByTypes.HTML"
-        [violation]="violation"
-      ></app-violation>
-      <h2>Script Violations</h2>
-      <app-violation
-        *ngFor="let violation of violationsByTypes.Script"
-        [violation]="violation"
-      ></app-violation>
-      <h2>URL Violations</h2>
-      <app-violation
-        *ngFor="let violation of violationsByTypes.URL"
-        [violation]="violation"
-      ></app-violation>
+
+    <div *ngIf="selectedViewMode === 'byTypes'">
+      <div class="violation-cards">
+        <app-type-group
+          *ngIf="violationsByTypes.HTML.length >= 1"
+          [violationGroupByType]="violationsByTypes.HTML"
+        ></app-type-group>
+        <app-type-group
+          *ngIf="violationsByTypes.Script.length >= 1"
+          [violationGroupByType]="violationsByTypes.Script"
+        ></app-type-group>
+        <app-type-group
+          *ngIf="violationsByTypes.URL.length >= 1"
+          [violationGroupByType]="violationsByTypes.URL"
+        ></app-type-group>
+      </div>
     </div>
   </div>
 </main>
