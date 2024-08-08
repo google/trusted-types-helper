@@ -22,4 +22,11 @@
 
 .button {
   margin-left: 20px;
+  margin-top: 5px;
+}
+
+.button {
+  .mat-button-toggle-checked {
+    background-color: rgb(189, 239, 252);
+  }
 }

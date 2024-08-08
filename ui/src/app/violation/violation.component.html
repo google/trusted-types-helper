@@ -1,13 +1,50 @@
-<mat-card class="violation-card">
+<!-- Show everything -->
+<mat-card *ngIf="isFirstViolation == true" class="violation-card">
   <mat-card-header>
-    <mat-card-title>Violation</mat-card-title>
-    <div class="card-actions-container">{{ elapsedTime }}</div>
+    <mat-chip [style.background-color]="chipColor">{{
+      violation?.type
+    }}</mat-chip>
+    <div class="data">{{ violation?.data }}</div>
+    <div class="time">{{ elapsedTime }}</div>
   </mat-card-header>
   <mat-card-content>
-    <ul>
-      <li *ngFor="let message of violationMessages">
-        {{ message }}
-      </li>
-    </ul>
+    <div>
+      <span class="highlight"><br />Script sample: </span>
+      <span class="code-block">{{ violation?.data }}</span>
+    </div>
+    <span class="highlight">Document URL: </span>{{ violation?.documentUrl
+    }}<br />
+    <span class="highlight">Stack trace:</span>
+    <div class="code-block">
+      <span *ngFor="let frame of stackTraceLines">
+        {{ frame }}
+      </span>
+    </div>
   </mat-card-content>
 </mat-card>
+<!-- Show only header -->
+<mat-accordion *ngIf="isFirstViolation == false" class="violation-card">
+  <mat-expansion-panel hideToggle>
+    <mat-expansion-panel-header>
+      <mat-panel-title>
+        <mat-chip [style.background-color]="chipColor">{{
+          violation?.type
+        }}</mat-chip>
+      </mat-panel-title>
+      <mat-panel-description>{{ violation?.data }} </mat-panel-description>
+      <div class="card-actions-container">{{ elapsedTime }}</div>
+    </mat-expansion-panel-header>
+    <div>
+      <span class="highlight">Script sample:</span>
+      <span class="code-block">{{ violation?.data }}</span>
+    </div>
+    <span class="highlight">Document URL: </span>{{ violation?.documentUrl
+    }}<br />
+    <span class="highlight">Stack trace:</span>
+    <div class="code-block">
+      <span *ngFor="let frame of stackTraceLines">
+        {{ frame }}
+      </span>
+    </div>
+  </mat-expansion-panel>
+</mat-accordion>

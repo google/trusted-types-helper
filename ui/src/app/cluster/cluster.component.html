@@ -1,0 +1,44 @@
+<mat-card class="cluster-card">
+  <mat-card-header>
+    <mat-card-title>
+      <div
+        class="badge"
+        matBadge="{{ cluster?.metadata?.count }}"
+        matBadgeOverlap="false"
+      >
+        <div>{{ cluster?.metadata?.rootCause }}</div>
+      </div>
+    </mat-card-title>
+  </mat-card-header>
+  <mat-card-content>
+    <div><span class="highlight">First seen: </span>{{ firstSeen }}</div>
+
+    <div *ngIf="showFirstViolationOnly == true">
+      <app-violation
+        [violation]="cluster?.clusteredViolations?.[0]"
+        [isFirstViolation]="true"
+      >
+      </app-violation>
+    </div>
+    <div *ngIf="showFirstViolationOnly == false">
+      <app-violation
+        *ngFor="let violation of cluster?.clusteredViolations; let i = index"
+        [violation]="violation"
+        [isFirstViolation]="i === 0"
+      ></app-violation>
+    </div>
+    <div
+      *ngIf="
+        cluster &&
+        cluster.clusteredViolations &&
+        cluster.clusteredViolations.length > 1
+      "
+    >
+      <mat-card-actions>
+        <button mat-button (click)="toggleViolationVisibility()">
+          {{ expandOrHideViolationsMessage }}
+        </button>
+      </mat-card-actions>
+    </div>
+  </mat-card-content>
+</mat-card>

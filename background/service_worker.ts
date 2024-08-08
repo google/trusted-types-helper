@@ -24,6 +24,7 @@ import {
   createDefaultPolicyWarning,
   TrustedTypesViolationCluster,
   createViolation,
+  addViolationByType,
 } from "../common/common";
 
 import { parseStackTrace } from "../common/stack_trace";
@@ -81,10 +82,17 @@ chrome.runtime.onMessage.addListener((msg: any, sender, sendResponse) => {
     case "listViolationsByTypes":
       if (msg.inspectedTabId) {
         chrome.storage.local.get(msg.inspectedTabId.toString(), (result) => {
-          var violationsByType: ViolationsByTypes = new ViolationsByTypes();
+          var violationsByType: ViolationsByTypes = {
+            HTML: [],
+            Script: [],
+            URL: [],
+          };
           for (const cluster of result[msg.inspectedTabId]) {
             for (const violation of cluster.clusteredViolations) {
-              violationsByType.addViolation(violation);
+              violationsByType = addViolationByType(
+                violation,
+                violationsByType,
+              );
             }
           }
           sendResponse(violationsByType);

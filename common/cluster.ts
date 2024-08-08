@@ -14,7 +14,11 @@
  * limitations under the License.
  */
 import { TrustedTypesViolationCluster, Violation } from "./common";
-import { isStackFrame, getFirstValidStackFrame } from "../common/stack_trace";
+import {
+  isStackFrame,
+  getFirstValidStackFrame,
+  getRootCause,
+} from "../common/stack_trace";
 
 export function createOrUpdateCluster(
   existingClusters: TrustedTypesViolationCluster[],
@@ -25,7 +29,8 @@ export function createOrUpdateCluster(
     if (belongsToCluster(cluster, newViolation)) {
       cluster.clusteredViolations.push(newViolation);
       cluster.metadata.count++;
-      cluster.metadata.lastOccurrence = new Date();
+      cluster.metadata.lastOccurrence = Date.now();
+      cluster.metadata.rootCause = getRootCause(newViolation.stackTrace);
       return existingClusters;
     }
   }
@@ -35,10 +40,10 @@ export function createOrUpdateCluster(
     clusteredViolations: [newViolation],
     metadata: {
       id: generateUniqueId(),
-      rootCause: "", // TODO
+      rootCause: getRootCause(newViolation.stackTrace),
       count: 1,
-      firstOccurrence: new Date(),
-      lastOccurrence: new Date(),
+      firstOccurrence: Date.now(),
+      lastOccurrence: Date.now(),
     },
   };
 
@@ -77,7 +82,6 @@ export function haveSameRootCause(
   violation1: Violation,
   violation2: Violation,
 ): boolean {
-  debugger;
   const stackFrame1 = getFirstValidStackFrame(violation1.stackTrace);
   const stackFrame2 = getFirstValidStackFrame(violation2.stackTrace);
 

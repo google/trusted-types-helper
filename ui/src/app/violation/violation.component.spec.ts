@@ -27,14 +27,14 @@ describe('ViolationComponent', () => {
 
   it('should generate correct messages for a basic violation', () => {
     // Create a mock violation object with mock data
-    const violation: Violation = new Violation(
-      'someData',
-      'HTML',
-      0,
-      { frames: [] },
-      'https://example.com',
-    );
-    violation.setSourceFile('path/to/source.js');
+    const violation: Violation = {
+      data: 'someData',
+      type: 'HTML',
+      timestamp: 123456789,
+      stackTrace: { frames: [] },
+      documentUrl: 'https://example.com',
+    };
+    violation.sourceFile = 'path/to/source.js';
 
     const messages = component.generateMessage(violation);
     expect(messages).toEqual([
@@ -79,11 +79,11 @@ describe('ViolationComponent', () => {
 
   it('should generate correct messages when source file of violation is undefined.', () => {
     // Create a mock violation object with mock data
-    const violation: Violation = new Violation(
-      'someData',
-      'HTML',
-      123456789,
-      {
+    const violation: Violation = {
+      data: 'someData',
+      type: 'HTML',
+      timestamp: 123456789,
+      stackTrace: {
         frames: [
           'Error', // Skipped
           'internalFunction1', // Skipped
@@ -92,8 +92,8 @@ describe('ViolationComponent', () => {
           'internalFunction4', // No source file
         ],
       },
-      'https://example.com',
-    );
+      documentUrl: 'https://example.com',
+    };
     const messages = component.generateMessage(violation);
     console.log(messages);
     expect(messages).toEqual([
