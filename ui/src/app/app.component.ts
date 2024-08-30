@@ -30,12 +30,14 @@ import {
   Violation,
   ViolationDataType,
   StackTrace,
+  DefaultPolicyData,
 } from '../../../common/common';
 import { NgClass, NgFor, CommonModule } from '@angular/common';
 import { TypeGroupComponent } from './type-group/type-group.component';
 import { ViolationComponent } from './violation/violation.component';
 import { WarningComponent } from './warning/warning.component';
 import { ClusterComponent } from './cluster/cluster.component';
+import { DefaultPolicyComponent } from './default-policies/default-policies.component';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -57,6 +59,7 @@ import { TrustedTypesViolationCluster } from '../../../common/common';
     ViolationComponent,
     WarningComponent,
     ClusterComponent,
+    DefaultPolicyComponent,
     CommonModule,
     MatButtonToggleModule,
     MatFormFieldModule,
@@ -82,11 +85,16 @@ export class AppComponent {
     URL: [],
   };
   violationsByClusters: TrustedTypesViolationCluster[] = [];
+  defaultPolicyData: DefaultPolicyData = {
+    HTML: [],
+    Script: [],
+    URL: [],
+  };
   defaultPolicyWarningSubject =
     new BehaviorSubject<DefaultPolicyWarning | null>(null);
   defaultPolicyWarning$: Observable<DefaultPolicyWarning | null> =
     this.defaultPolicyWarningSubject.asObservable();
-  selectedViewMode: 'byClusters' | 'byTypes' = 'byClusters'; // Default viewing mode
+  selectedViewMode: 'byClusters' | 'byTypes' | 'defaultPolicies' = 'byClusters'; // Default viewing mode
 
   constructor(private cdr: ChangeDetectorRef) {}
 
@@ -96,6 +104,8 @@ export class AppComponent {
       this.violationsByClusters = response;
     } else if (this.selectedViewMode == 'byTypes') {
       this.violationsByTypes = response;
+    } else if (this.selectedViewMode == 'defaultPolicies') {
+      this.defaultPolicyData = response;
     }
     // Trigger re-render because this assignment might happen after the initial
     // paint in ngOnInit().
@@ -104,15 +114,21 @@ export class AppComponent {
 
   async getViolationDataFromLocalStorage() {
     const message: Message = {
-      type:
-        this.selectedViewMode == 'byTypes'
-          ? 'listViolationsByType'
-          : 'listViolationsByCluster',
+      type: this.getMessageTypeFromViewMode(),
       inspectedTabId: chrome.devtools.inspectedWindow.tabId,
     };
     const response = await chrome.runtime.sendMessage(message);
 
     return response;
+  }
+
+  getMessageTypeFromViewMode() {
+    if (this.selectedViewMode == 'byTypes') {
+      return 'listViolationsByType';
+    } else if (this.selectedViewMode == 'defaultPolicies') {
+      return 'defaultPolicies';
+    }
+    return 'listViolationsByCluster';
   }
 
   async updateDefaultPolicyData() {
