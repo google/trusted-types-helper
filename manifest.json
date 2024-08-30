@@ -4,7 +4,7 @@
   "description": "Identify and resolve Trusted Types violations easily!",
   "version": "1.0",
   "action": {
-    "default_popup": "hello.html"
+    "default_popup": "popup.html"
   },
   "devtools_page": "devtools.html",
   "content_scripts": [

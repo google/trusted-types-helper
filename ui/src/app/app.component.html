@@ -28,6 +28,9 @@
     >
       <mat-button-toggle value="byClusters">By Clusters</mat-button-toggle>
       <mat-button-toggle value="byTypes">By Types</mat-button-toggle>
+      <mat-button-toggle value="defaultPolicies"
+        >Generate Default Policies</mat-button-toggle
+      >
     </mat-button-toggle-group>
 
     <div *ngIf="selectedViewMode === 'byClusters'">
@@ -53,6 +56,11 @@
           [violationGroupByType]="violationsByTypes.URL"
         ></app-type-group>
       </div>
+    </div>
+
+    <div *ngIf="selectedViewMode === 'defaultPolicies'">
+      <app-default-policy [defaultPolicies]="defaultPolicyData">
+      </app-default-policy>
     </div>
   </div>
 </main>
