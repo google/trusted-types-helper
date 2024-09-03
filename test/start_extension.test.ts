@@ -121,7 +121,7 @@ test(
     const panel = await openDevToolsPanel(browser, extensionId, (x) => fail(x));
 
     // Get the text of the message box
-    const element = await panel.$(".message-box.success");
+    const element = await panel.$("simple-snack-bar");
     const elementText = await element?.evaluate((el) => el.textContent);
 
     expect(elementText).toContain("Trusted Types Default Policy was created.");
@@ -146,7 +146,7 @@ test(
     const panel = await openDevToolsPanel(browser, extensionId, (x) => fail(x));
 
     // Get the text of the message box
-    const element = await panel.$(".message-box.error");
+    const element = await panel.$("simple-snack-bar");
     const elementText = await element?.evaluate((el) => el.textContent);
 
     expect(elementText).toContain(
