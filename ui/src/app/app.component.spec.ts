@@ -24,6 +24,8 @@ import {
   Message,
   createViolation,
 } from '../../../common/common';
+import { provideAnimations } from '@angular/platform-browser/animations';
+import { By } from '@angular/platform-browser';
 
 describe('AppComponent', () => {
   let chromeRuntimeMock: any; // Full type definition is way too long.
@@ -71,6 +73,7 @@ describe('AppComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [AppComponent],
+      providers: [provideAnimations()], // Because this component has animations
     }).compileComponents();
 
     // Mock chrome.runtime.sendMessage and chrome.devtools.inspectedWindow.tabId
@@ -80,10 +83,12 @@ describe('AppComponent', () => {
       // the UI sending unusual messages.
       if (isMessage(message)) {
         switch (message.type) {
-          case 'listViolations':
+          case 'listViolationsByType':
             return Promise.resolve(listViolationsResponse);
+          case 'listViolationsByCluster':
+            return Promise.resolve([]); // TODO: Better value for this
           default:
-            return Promise.resolve({});
+            return Promise.resolve();
         }
       }
       return Promise.resolve(undefined);
@@ -104,31 +109,56 @@ describe('AppComponent', () => {
     expect(app).toBeTruthy();
   });
 
-  it(`should have the 'trusted-types-helper-ui' title`, () => {
-    const fixture = TestBed.createComponent(AppComponent);
-    const app = fixture.componentInstance;
-  });
-
-  it('should render violations data', async () => {
+  it('should change viewed violations type', async () => {
+    // Initially should be "By Clusters" by default.
     const fixture = TestBed.createComponent(AppComponent);
     fixture.detectChanges();
-    const compiled = fixture.nativeElement as HTMLElement;
+    expect(fixture.componentInstance.selectedViewMode).toEqual('byClusters');
+
+    // Can be toggled to "By Types".
+    let toggle = fixture.debugElement
+      .queryAll(By.css('mat-button-toggle'))
+      .find((node) => node.nativeElement.textContent === 'By Types')!;
+    toggle.nativeElement.childNodes[0].click(); // Click the button inside.
+    fixture.detectChanges();
+    expect(fixture.componentInstance.selectedViewMode).toEqual('byTypes');
+
+    // And can be toggled back to "By Clusters".
+    toggle = fixture.debugElement
+      .queryAll(By.css('mat-button-toggle'))
+      .find((node) => node.nativeElement.textContent === 'By Clusters')!;
+    toggle.nativeElement.childNodes[0].click();
+    fixture.detectChanges();
+    expect(fixture.componentInstance.selectedViewMode).toEqual('byClusters');
+  });
+
+  it('should render violations data when displaying by types', async () => {
+    const fixture = TestBed.createComponent(AppComponent);
+    fixture.detectChanges();
 
     // Trigger the event that will fetch and render the violations.
     await fixture.componentInstance.populateViolations();
     fixture.detectChanges();
+    const toggles = fixture.debugElement.queryAll(By.css('mat-button-toggle'));
+    toggles
+      .find((node) => node.nativeElement.textContent === 'By Types')!
+      .nativeElement.childNodes[0].click();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    // Expand everything.
+    fixture.debugElement.queryAll(By.css('button')).forEach((de) => {
+      if (de.nativeElement.textContent.trim() === 'Expand violations') {
+        de.nativeElement.click();
+        fixture.detectChanges(); // Trigger change detection after each click
+      }
+    });
 
     // Make sure that the correct Chrome APIs were called
     expect(chromeRuntimeMock.sendMessage).toHaveBeenCalled();
 
-    // In the current template, we throw everything into a <li>
-    const renderedMessages: string[] = [];
-    compiled.querySelectorAll('li')?.forEach((node) => {
-      if (node.textContent) {
-        renderedMessages.push(node.textContent);
-      }
-    });
-    const allRenderedMessages = renderedMessages.join('\n');
+    // Dump the entire text of the component.
+    const allRenderedMessages = fixture.nativeElement.textContent;
 
     // Make sure all data from our fake data is surfaced.
     for (const violationType of Object.getOwnPropertyNames(

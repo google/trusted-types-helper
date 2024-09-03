@@ -82,7 +82,7 @@ export class AppComponent {
     new BehaviorSubject<DefaultPolicyWarning | null>(null);
   defaultPolicyWarning$: Observable<DefaultPolicyWarning | null> =
     this.defaultPolicyWarningSubject.asObservable();
-  selectedViewMode = 'byClusters'; // Default viewing mode
+  selectedViewMode: 'byClusters' | 'byTypes' = 'byClusters'; // Default viewing mode
 
   async populateViolations() {
     const response = await this.getViolationDataFromLocalStorage();
@@ -94,14 +94,14 @@ export class AppComponent {
   }
 
   async getViolationDataFromLocalStorage() {
-    var command = 'listViolationsByClusters';
-    if (this.selectedViewMode == 'byTypes') {
-      command = 'listViolationsByTypes';
-    }
-    const response = await chrome.runtime.sendMessage({
-      type: command,
+    const message: Message = {
+      type:
+        this.selectedViewMode == 'byTypes'
+          ? 'listViolationsByType'
+          : 'listViolationsByCluster',
       inspectedTabId: chrome.devtools.inspectedWindow.tabId,
-    });
+    };
+    const response = await chrome.runtime.sendMessage(message);
 
     return response;
   }
