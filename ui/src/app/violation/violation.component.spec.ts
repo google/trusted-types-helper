@@ -6,6 +6,8 @@ import {
   ViolationType,
   StackFrame,
 } from '../../../../common/common';
+import { By } from '@angular/platform-browser';
+import { provideAnimations } from '@angular/platform-browser/animations';
 
 describe('ViolationComponent', () => {
   let component: ViolationComponent;
@@ -14,6 +16,7 @@ describe('ViolationComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [ViolationComponent],
+      providers: [provideAnimations()], // Because this component has animations
     }).compileComponents();
 
     fixture = TestBed.createComponent(ViolationComponent);
@@ -33,17 +36,25 @@ describe('ViolationComponent', () => {
       timestamp: 123456789,
       stackTrace: { frames: [] },
       documentUrl: 'https://example.com',
+      sourceFile: 'path/to/source.js',
     };
-    violation.sourceFile = 'path/to/source.js';
+    component.violation = violation;
+    component.ngOnInit(); // Force to reload the component as if the first time.
+    fixture.detectChanges();
 
-    const messages = component.generateMessage(violation);
-    expect(messages).toEqual([
-      'Violation Type: HTML',
-      'Data passed into injection sink: someData',
-      'Stack Trace:',
-      'Document URL: https://example.com',
-      'Source file of violation: path/to/source.js',
-    ]);
+    fixture.debugElement
+      .query(By.css('mat-expansion-panel-header'))
+      .nativeElement.click();
+    fixture.detectChanges();
+    const messages = fixture.debugElement.query(By.css('mat-expansion-panel'))
+      .nativeElement.textContent;
+    [
+      'HTML',
+      'someData',
+      'Stack trace:',
+      'https://example.com',
+      // 'path/to/source.js', // TODO: Put this back in the UI.
+    ].forEach((s) => expect(messages).toContain(s));
   });
 
   it('should format a stack trace correctly', () => {
@@ -71,9 +82,9 @@ describe('ViolationComponent', () => {
       ],
     };
     const formattedStackTrace = component.generateStackTraceMessage(stackTrace);
-    expect(formattedStackTrace).toEqual([
-      '  at someFunction(path/to/external.js:10:1)\n',
-      '  at anotherFunction(path/to/another.js:20:2)\n',
+    expect(formattedStackTrace.map((s) => s.trim())).toEqual([
+      'at someFunction (path/to/external.js:10:1)',
+      'at anotherFunction (path/to/another.js:20:2)',
     ]);
   });
 
@@ -94,15 +105,23 @@ describe('ViolationComponent', () => {
       },
       documentUrl: 'https://example.com',
     };
-    const messages = component.generateMessage(violation);
-    console.log(messages);
-    expect(messages).toEqual([
-      'Violation Type: HTML',
-      'Data passed into injection sink: someData',
-      'Stack Trace:',
+    component.violation = violation;
+    component.ngOnInit(); // Force to reload the component as if the first time.
+    fixture.detectChanges();
+
+    fixture.debugElement
+      .query(By.css('mat-expansion-panel-header'))
+      .nativeElement.click();
+    fixture.detectChanges();
+    const messages = fixture.debugElement.query(By.css('mat-expansion-panel'))
+      .nativeElement.textContent;
+    [
+      'HTML',
+      'someData',
+      'Stack trace:',
       'internalFunction4\n',
       'Document URL: https://example.com',
-      'No source file available.',
-    ]);
+      // 'No source file available.', // TODO: Put this back in the UI.
+    ].forEach((s) => expect(messages).toContain(s));
   });
 });

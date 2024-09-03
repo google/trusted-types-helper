@@ -184,16 +184,25 @@ export type Message =
   | GetDefaultPolicyWarningCommand;
 
 // TODO: Change this if the type above is updated.
-export function isMessage(obj: any): obj is Message {
-  return (
-    "type" in obj &&
-    (obj.type === "violationFound" ||
-      obj.type === "listViolations" ||
-      obj.type === "listViolationsByClusters" ||
-      obj.type === "listViolationsByTypes" ||
-      obj.type === "defaultPolicyWarning" ||
-      obj.type === "getDefaultPolicyWarning")
-  );
+export function isMessage(message: any): message is Message {
+  if (typeof message !== "object" || message === null) {
+    return false;
+  }
+
+  switch (message.type) {
+    case "violationFound":
+      return "violationData" in message;
+    case "listViolations":
+    case "listViolationsByCluster":
+    case "listViolationsByType":
+      return "inspectedTabId" in message;
+    case "defaultPolicyWarning":
+      return "defaultPolicyWarning" in message;
+    case "getDefaultPolicyWarning":
+      return true; // No additional properties to check
+    default:
+      return false; // Unknown message type
+  }
 }
 
 /**
