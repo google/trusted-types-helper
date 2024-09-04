@@ -17,3 +17,22 @@
   font-weight: bold;
   color: #4b4a4a;
 }
+
+.first-seen {
+  display: flex;
+}
+
+/* Really small screens (for instance, right-hand docking of DevTools) */
+@media (max-width: 350px) {
+  .first-seen {
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 500px) {
+  .cluster-root-cause {
+    overflow: auto;
+    word-break: break-all;
+    line-break: anywhere;
+  }
+}
