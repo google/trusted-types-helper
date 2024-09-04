@@ -41,6 +41,19 @@ const server = http.createServer((req, res) => {
       "Content-Type": "text/html", // Adjust if serving a different file type
       "Cache-Control": "no-cache", // Example custom header
     };
+    if (query.violation) {
+      if (!query.header && !query.meta) {
+        query.meta = true; // Trigger at least one TT enforcement mechanism.
+      }
+      dataString = dataString.replace(
+        "Trusted Types violations",
+        "Trusted Types violations \u2611",
+      );
+      dataString = dataString.replace(
+        "</body>",
+        "<button onclick=\"eval('alert(1337)')\">Click me for a violation!</button></body>",
+      );
+    }
     if (query.header) {
       headers["Content-Security-Policy"] =
         "require-trusted-types-for 'script';";
@@ -69,8 +82,6 @@ const server = http.createServer((req, res) => {
         '<head><script>if (window.trustedTypes) { window.trustedTypes.createPolicy("default", {createHTML: (string => {return string;}), createScript: (string => {return string;}), createScriptURL: (string => {return string;})});}</script>',
       );
     }
-
-    // TODO: Violation insertion too.
 
     res.writeHead(200, headers);
 
