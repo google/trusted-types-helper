@@ -26,14 +26,10 @@ import {
   DefaultPolicyWarning,
   Message,
   ViolationsByTypes,
-  ViolationType,
-  Violation,
-  ViolationDataType,
-  StackTrace,
-  DefaultPolicyData,
   sortClusterByMostRecent,
   sortViolationsByTypesByMostRecent,
 } from '../../../common/common';
+import { DefaultPolicyData } from '../../../common/default-policies';
 import { NgClass, NgFor, CommonModule } from '@angular/common';
 import { TypeGroupComponent } from './type-group/type-group.component';
 import { ViolationComponent } from './violation/violation.component';
@@ -88,7 +84,12 @@ export class AppComponent {
   };
   violationsByClusters: TrustedTypesViolationCluster[] = [];
   defaultPolicyData: DefaultPolicyData = {
-    HTML: [],
+    HTML: {
+      tags: [],
+      attrs: [],
+      violationFragment: [],
+      allowlist: [],
+    },
     Script: [],
     URL: [],
   };
@@ -111,7 +112,11 @@ export class AppComponent {
       sortViolationsByTypesByMostRecent(response);
       this.violationsByTypes = response;
     } else if (this.selectedViewMode == 'defaultPolicies') {
+      console.log('testing app component: ');
       this.defaultPolicyData = response;
+      console.log(
+        'retriving response in app component: ' + JSON.stringify(response),
+      );
     }
     // Trigger re-render because this assignment might happen after the initial
     // paint in ngOnInit().
@@ -123,6 +128,8 @@ export class AppComponent {
       type: this.getMessageTypeFromViewMode(),
       inspectedTabId: chrome.devtools.inspectedWindow.tabId,
     };
+    console.log('message: ');
+    console.log(message);
     const response = await chrome.runtime.sendMessage(message);
 
     return response;

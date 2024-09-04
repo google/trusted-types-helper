@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import DOMPurify from "dompurify";
 import { NUMBER_OF_EXTENSION_INTERNAL_STACK_FRAMES } from "../common/stack_trace";
 
 export type ViolationType = "HTML" | "Script" | "URL";
@@ -151,17 +152,19 @@ export function sortViolationsByTypesByMostRecent(
 }
 
 /**
- * Defines the structure of default policy allowlists.
+ * Defines the metadata for HTML violations to generate deafult policies.
  *
- * @interface DefaultPolicyData
- * @property {Array<string>} HTML An allowlist for HTML violations.
- * @property {Array<string>} Script An allowlist for Script violations.
- * @property {Array<string>} URL An allowlist for URL violations.
+ * @interface HTMLData
+ * @property {Array<string>} tags HTML tags to add to sanitizer configs (e.g. ALLOWED_TASG).
+ * @property {Array<string>} attrs HTML attributes to add to sanitizer configs (e.g. ALLOWED_ATTR).
+ * @property {Array<string>} violationFragment A list of violation input strings received.
+ * @property {Array<string>} allowlist A list of HTML input strings to be allowlisted
  */
-export interface DefaultPolicyData {
-  HTML: Array<string>;
-  Script: Array<string>;
-  URL: Array<string>;
+export interface HTMLData {
+  tags: Array<string>;
+  attrs: Array<string>;
+  violationFragment: Array<string>; // to display for users
+  allowlist: Array<string>; // in case of HTML input strings being not parsable
 }
 
 export interface ViolationError {
@@ -204,6 +207,15 @@ export interface GetDefaultPolicyWarningCommand {
   type: "getDefaultPolicyWarning";
 }
 
+export interface GetSanitizedInputCommand {
+  type: "getSanitizedInput";
+  sanitized: string;
+}
+
+export interface SendSanitizedInputCommand {
+  type: "sendSanitizedInput";
+}
+
 /**
  * Each message has a specific structure based on its type. These structures
  * are used to represent different types of events, commands, or data transfers.
@@ -215,7 +227,9 @@ export type Message =
   | ListViolationsByTypesCommand
   | DefaultPoliciesCommand
   | DefaultPolicyWarningMessage
-  | GetDefaultPolicyWarningCommand;
+  | GetDefaultPolicyWarningCommand
+  | GetSanitizedInputCommand
+  | SendSanitizedInputCommand;
 
 // TODO: Change this if the type above is updated.
 export function isMessage(message: any): message is Message {
@@ -234,6 +248,8 @@ export function isMessage(message: any): message is Message {
     case "defaultPolicyWarning":
       return "defaultPolicyWarning" in message;
     case "getDefaultPolicyWarning":
+    case "getSanitizedInput":
+    case "sendSanitizedInput":
       return true; // No additional properties to check
     default:
       return false; // Unknown message type

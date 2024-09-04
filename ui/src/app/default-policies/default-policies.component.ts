@@ -10,7 +10,7 @@ import { Highlight } from 'ngx-highlightjs';
 import { NgClass, NgFor, NgIf } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
-import { DefaultPolicyData, ViolationType } from '../../../../common/common';
+import { DefaultPolicyData } from '../../../../common/default-policies';
 import { MatBadgeModule } from '@angular/material/badge';
 import { MatExpansionModule } from '@angular/material/expansion';
 
@@ -23,54 +23,87 @@ import { MatExpansionModule } from '@angular/material/expansion';
 })
 export class DefaultPolicyComponent implements OnInit {
   @Input()
-  defaultPolicies: DefaultPolicyData | undefined = undefined;
-  allowedUrl: String | undefined = undefined;
-  allowedScript: String | undefined = undefined;
-  allowedAngular: String | undefined = undefined;
+  defaultPolicies: DefaultPolicyData = {
+    HTML: {
+      tags: [],
+      attrs: [],
+      violationFragment: [],
+      allowlist: [],
+    },
+    Script: [],
+    URL: [],
+  };
 
-  // maybe use an array and use 'join("")' to "build res string"
-  code = '';
+  code: string = ''; // result to display in string
 
-  buildAllowlist(type: ViolationType, allowlist: Array<String>): String {
+  // build a string to look like an array: '[a, b, c]'
+  buildAllowlist(allowlist: Array<String | undefined>): String {
     if (allowlist) {
       const list = allowlist.map((item) => `'${item}'`).join(', ');
-      return `const ${type.toLowerCase() + 'Allowlist'} = [${list}];\n`;
+      return `${list}`;
     }
     return '';
   }
 
-  generateDefaultPolicies() {}
-
   ngOnInit() {
-    console.log('default policy page!');
+    console.log('default policy page is loaded!');
     if (this.defaultPolicies) {
-      console.log(this.defaultPolicies);
-      this.code += this.buildAllowlist('URL', this.defaultPolicies.URL);
-      this.code += this.buildAllowlist('Script', this.defaultPolicies.Script);
-      this.code += this.buildAllowlist('HTML', this.defaultPolicies.HTML);
-      this.code += `window.trustedTypes.createPolicy(\'default\', {\n`;
-      this.code += `\tcreateScriptURL: (input) => {
-          \t\tif (urlAllowlist.some(allowlist => input.startsWith(allowlist))) {
-          \t\t\treturn input;
-          \t\t} else {
-          \t\t\treturn null;
-          \t\t}
-          \t},\n`;
-      this.code += `\tcreateScript: (input) => {
-          \t\tif (scriptAllowlist.includes(input)) {
-          \t\t\treturn input;
-          \t\t} else {
-          \t\t\treturn null;
-          \t\t}
-          \t},\n`;
-      this.code += `\tcreateHTML: (input) => {
-          \t\tif (angularScript.includes(input)) {
-          \t\t\treturn input;
-          \t\t} else {
-          \t\t\treturn null;
-          \t\t}
-          \t},\n`;
-      this.code += `});`;
+      console.log(
+        'default policies in its component: ' +
+          JSON.stringify(this.defaultPolicies),
+      );
+
+      // list of allowed HTML tags
+      let tags;
+      if (this.defaultPolicies.HTML && this.defaultPolicies.HTML.tags) {
+        tags = this.buildAllowlist(this.defaultPolicies.HTML.tags);
+      } else {
+        tags = '';
+      }
+      let attr;
+      if (this.defaultPolicies.HTML && this.defaultPolicies.HTML.attrs) {
+        attr = this.buildAllowlist(this.defaultPolicies.HTML.attrs);
+      } else {
+        attr = '';
+      }
+      let allowlist;
+      if (this.defaultPolicies.HTML && this.defaultPolicies.HTML.allowlist) {
+        allowlist = this.buildAllowlist(this.defaultPolicies.HTML.allowlist);
+      } else {
+        allowlist = '';
+      }
+
+      var temp = [];
+      temp.push(
+        // dompurify
+        `\n`, // to fix intentation
+        `const urlAllowlist = [${this.buildAllowlist(this.defaultPolicies.URL)}];`,
+        `const scriptAllowlist = [${this.buildAllowlist(this.defaultPolicies.Script)}];`,
+        `const htmlAllowlist = [${allowlist}];`,
+        `window.trustedTypes.createPolicy(\'default\', {`,
+        `        createScriptURL: (input) => {`,
+        `                if (urlAllowlist.some(allowlist => input.startsWith(allowlist))) {`,
+        `                        return input;`,
+        `                } else {`,
+        `                        return null;`,
+        `                }`,
+        `        },\n`,
+        `        createScript: (input) => {`,
+        `                if (scriptAllowlist.includes(input)) {`,
+        `                        return input;`,
+        `                } else {`,
+        `                        return null;`,
+        `                }`,
+        `        },\n`,
+        `        createHTML: (input) => {`,
+        `               if (htmlAllowlist.includes(input)) {`,
+        `                         return input;`,
+        `               else {`,
+        `                         return DOMPurify.sanitize(input, {ADD_TAGS: [${tags}], ADD_ATTR: [${attr}]);`,
+        `               }`,
+        `        },\n});`,
+      );
+      this.code = temp.join('\n');
     }
   }
 
