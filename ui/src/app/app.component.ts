@@ -16,7 +16,11 @@
 
 /// <reference types="chrome"/>
 // import {chrome} from '@types/chrome';
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  ChangeDetectorRef,
+  Component,
+} from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import {
   DefaultPolicyWarning,
@@ -84,6 +88,8 @@ export class AppComponent {
     this.defaultPolicyWarningSubject.asObservable();
   selectedViewMode: 'byClusters' | 'byTypes' = 'byClusters'; // Default viewing mode
 
+  constructor(private cdr: ChangeDetectorRef) {}
+
   async populateViolations() {
     const response = await this.getViolationDataFromLocalStorage();
     if (this.selectedViewMode == 'byClusters') {
@@ -91,6 +97,9 @@ export class AppComponent {
     } else if (this.selectedViewMode == 'byTypes') {
       this.violationsByTypes = response;
     }
+    // Trigger re-render because this assignment might happen after the initial
+    // paint in ngOnInit().
+    this.cdr.detectChanges();
   }
 
   async getViolationDataFromLocalStorage() {
