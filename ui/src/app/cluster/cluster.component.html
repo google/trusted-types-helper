@@ -6,12 +6,14 @@
         matBadge="{{ cluster?.metadata?.count }}"
         matBadgeOverlap="false"
       >
-        <div>{{ cluster?.metadata?.rootCause }}</div>
+        <div class="cluster-root-cause">{{ cluster?.metadata?.rootCause }}</div>
       </div>
     </mat-card-title>
   </mat-card-header>
   <mat-card-content>
-    <div><span class="highlight">First seen: </span>{{ firstSeen }}</div>
+    <div class="first-seen">
+      <span class="highlight">First seen: </span>{{ firstSeen }}
+    </div>
 
     <div *ngIf="showFirstViolationOnly == true">
       <app-violation

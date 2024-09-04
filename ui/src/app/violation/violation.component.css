@@ -1,17 +1,56 @@
-.violation-card {
-  margin: 3px;
+mat-expansion-panel-header {
+  padding: 0;
+  display: flex;
 }
 
-.card-actions-container {
-  position: absolute;
-  top: 10px;
-  right: 15px;
+.open-violation-card-header {
+  /* Behaving like a mat-card-header without generating an empty div for 
+  mat-card-header-text */
+  padding: 16px 16px 0;
+
+  /* Get the violation type/payload/time to align correctly. */
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* Valid only for the mat-accordion headers. */
+mat-accordion .open-violation-card-header {
+  /* Take up the entire width of the parent. */
+  flex-basis: 100%;
+
+  /* Cancel the padding specified for the non-accordion version. */
+  padding: 0 16px 0;
+}
+
+.violation-data-container {
+  display: flex;
+  box-sizing: border-box; /* Try to make the divs not bigger than the parent. */
+  gap: 1em;
+}
+
+.flex-card-content {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  padding: 0 16px; /* Copied from mat-mdc-card-content but flex not block. */
+  overflow: auto;
+}
+
+.violation-card {
+  margin: 3px;
 }
 
 .code-block {
   padding: 0px;
   font-family: monospace;
-  white-space: pre;
+  white-space: pre-line;
+
+  display: flex;
+  overflow-wrap: break-word;
+  max-width: 100%;
 }
 
 .highlight {
@@ -19,13 +58,43 @@
   color: #4b4a4a;
 }
 
-.time {
-  position: absolute;
-  top: 10px;
-  right: 15px;
+/* Large screens. */
+@media (min-width: 501px) {
+  .violation-data-container {
+    flex-direction: row;
+    /* Start out with two-by-two. */
+    flex-basis: 49%;
+  }
+
+  .violation-data-container-with-code {
+    flex-basis: 100%;
+  }
 }
 
-.data {
-  text-align: center;
-  margin: 0 auto;
+/* Sorta small screens (for instance, right-hand docking of DevTools) */
+@media (max-width: 500px) {
+  .violation-time {
+    display: none;
+  }
+
+  /* Start wrapping inside the violation card. */
+  .violation-data-container {
+    flex-direction: column;
+    flex-basis: 100%;
+  }
+}
+
+/* Really small screens (for instance, right-hand docking of DevTools) */
+@media (max-width: 350px) {
+  .highlight {
+    display: none;
+  }
+
+  .violation-data-container-with-code {
+    display: none;
+  }
+
+  .hide-when-really-small {
+    display: none;
+  }
 }
