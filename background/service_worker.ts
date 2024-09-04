@@ -39,11 +39,12 @@ var defaultPolicyWarning: DefaultPolicyWarning = createDefaultPolicyWarning(
 );
 
 // Listens to the content script
-chrome.runtime.onMessage.addListener((msg: any, sender, sendResponse) => {
+chrome.runtime.onMessage.addListener((msg: Message, sender, sendResponse) => {
   switch (msg.type) {
     case "violationFound":
-      if (sender.tab && sender.tab.id) {
+      if (sender.tab && sender.tab.id && !("error" in msg.violationData)) {
         const activeTabId = sender.tab.id;
+        const violationReport = msg.violationData;
 
         // Retrieve violation clusters for this tab from local storage
         chrome.storage.local.get(
@@ -60,11 +61,11 @@ chrome.runtime.onMessage.addListener((msg: any, sender, sendResponse) => {
               [activeTabId]: createOrUpdateCluster(
                 existingClusters,
                 createViolation(
-                  msg.violationData.data,
-                  msg.violationData.type,
-                  msg.violationData.timestamp,
-                  parseStackTrace(msg.violationData.unprocessedStackTrace),
-                  msg.violationData.documentUrl,
+                  violationReport.data,
+                  violationReport.type,
+                  violationReport.timestamp,
+                  parseStackTrace(violationReport.unprocessedStackTrace),
+                  violationReport.documentUrl,
                 ),
               ),
             });
@@ -72,14 +73,14 @@ chrome.runtime.onMessage.addListener((msg: any, sender, sendResponse) => {
         );
       }
       break;
-    case "listViolationsByClusters":
+    case "listViolationsByCluster":
       if (msg.inspectedTabId) {
         chrome.storage.local.get(msg.inspectedTabId.toString(), (result) => {
           sendResponse(result[msg.inspectedTabId]);
         });
       }
       return true;
-    case "listViolationsByTypes":
+    case "listViolationsByType":
       if (msg.inspectedTabId) {
         chrome.storage.local.get(msg.inspectedTabId.toString(), (result) => {
           var violationsByType: ViolationsByTypes = {
