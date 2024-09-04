@@ -14,7 +14,19 @@
  * limitations under the License.
  */
 
+import { Message } from "../common/common";
+import { sanitizeWithDOMPurify } from "./purify";
+
 self.addEventListener("message", (msg) => {
   console.log("This is from listen: " + JSON.stringify(msg));
   chrome.runtime.sendMessage(msg.data);
+});
+
+chrome.runtime.onMessage.addListener((msg: Message, sender, sendResponse) => {
+  console.log("msg from service worker in listen.ts: " + msg);
+  if (msg.type === "getSanitizedInput") {
+    console.log("received message from service worker to sanitize");
+    const res = sanitizeWithDOMPurify(msg.sanitized);
+    sendResponse(res);
+  }
 });

@@ -25,12 +25,11 @@ import {
   TrustedTypesViolationCluster,
   createViolation,
   addViolationByType,
-  DefaultPolicyData,
 } from "../common/common";
 
-import { parseStackTrace } from "../common/stack_trace";
+import { DefaultPolicyData } from "../common/default-policies";
 
-import { organizeDefaultPolicyData } from "../common/default-policies";
+import { parseStackTrace } from "../common/stack_trace";
 
 const CSP_HEADER = "content-security-policy";
 const CSP_HEADER_REPORT_ONLY = "Content-Security-Policy-Report-Only";
@@ -43,8 +42,10 @@ var defaultPolicyWarning: DefaultPolicyWarning = createDefaultPolicyWarning(
 
 // Listens to the content script
 chrome.runtime.onMessage.addListener((msg: Message, sender, sendResponse) => {
+  // TODO: add a new msg type for popup button later
   if ("action" in msg && msg.action === "ON/OFF clicked") {
     console.log(msg.action);
+    return;
   }
 
   switch (msg.type) {
@@ -109,9 +110,21 @@ chrome.runtime.onMessage.addListener((msg: Message, sender, sendResponse) => {
       return true;
     case "defaultPolicies":
       if (msg.inspectedTabId) {
-        chrome.storage.local.get(msg.inspectedTabId.toString(), (result) => {
-          sendResponse(organizeDefaultPolicyData(result, msg.inspectedTabId));
-        });
+        chrome.storage.local.get(
+          msg.inspectedTabId.toString(),
+          async (result) => {
+            console.log("msg.insepectedTabId: " + msg.inspectedTabId + "\n");
+            console.log(
+              "msg sending from service worker to app component: " +
+                JSON.stringify(
+                  await DefaultPolicyData.init(result[msg.inspectedTabId]),
+                ),
+            );
+            sendResponse(
+              await DefaultPolicyData.init(result[msg.inspectedTabId]),
+            );
+          },
+        );
       }
       return true;
     case "defaultPolicyWarning":

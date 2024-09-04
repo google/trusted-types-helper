@@ -28,6 +28,8 @@ import {
 } from "../common/common";
 import { TrustedTypesWindow } from "trusted-types/lib";
 
+import DOMPurify from "dompurify";
+
 // Alert when there is an error in case the user already has a default policy,
 // the extension policy may be set first and when the user's default policy
 // is set an error occurs.
