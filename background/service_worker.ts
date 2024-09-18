@@ -25,9 +25,12 @@ import {
   TrustedTypesViolationCluster,
   createViolation,
   addViolationByType,
+  DefaultPolicyData,
 } from "../common/common";
 
 import { parseStackTrace } from "../common/stack_trace";
+
+import { organizeDefaultPolicyData } from "../common/default-policies";
 
 const CSP_HEADER = "content-security-policy";
 const CSP_HEADER_REPORT_ONLY = "Content-Security-Policy-Report-Only";
@@ -40,6 +43,10 @@ var defaultPolicyWarning: DefaultPolicyWarning = createDefaultPolicyWarning(
 
 // Listens to the content script
 chrome.runtime.onMessage.addListener((msg: Message, sender, sendResponse) => {
+  if ("action" in msg && msg.action === "ON/OFF clicked") {
+    console.log(msg.action);
+  }
+
   switch (msg.type) {
     case "violationFound":
       if (sender.tab && sender.tab.id && !("error" in msg.violationData)) {
@@ -100,6 +107,13 @@ chrome.runtime.onMessage.addListener((msg: Message, sender, sendResponse) => {
         });
       }
       return true;
+    case "defaultPolicies":
+      if (msg.inspectedTabId) {
+        chrome.storage.local.get(msg.inspectedTabId.toString(), (result) => {
+          sendResponse(organizeDefaultPolicyData(result, msg.inspectedTabId));
+        });
+      }
+      return true;
     case "defaultPolicyWarning":
       defaultPolicyWarning = msg.defaultPolicyWarning;
       break;
@@ -130,7 +144,7 @@ function checkHeaderForTrustedTypes(
           header.value.includes(TRUSTED_TYPES_DIRECTIVE),
       )
     ) {
-      console.log("Changed the headers!");
+      console.log("Added the headers!");
       chrome.declarativeNetRequest.updateDynamicRules({
         addRules: [
           {

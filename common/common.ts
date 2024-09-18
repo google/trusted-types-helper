@@ -136,6 +136,20 @@ export function addViolationByType(
   return violationsByTypes;
 }
 
+/**
+ * Defines the structure of default policy allowlists.
+ *
+ * @interface DefaultPolicyData
+ * @property {Array<string>} HTML An allowlist for HTML violations.
+ * @property {Array<string>} Script An allowlist for Script violations.
+ * @property {Array<string>} URL An allowlist for URL violations.
+ */
+export interface DefaultPolicyData {
+  HTML: Array<string>;
+  Script: Array<string>;
+  URL: Array<string>;
+}
+
 export interface ViolationError {
   data: string;
   type: ViolationType;
@@ -162,6 +176,11 @@ export interface ListViolationsByTypesCommand {
   inspectedTabId: number;
 }
 
+export interface DefaultPoliciesCommand {
+  type: "defaultPolicies";
+  inspectedTabId: number;
+}
+
 export interface DefaultPolicyWarningMessage {
   type: "defaultPolicyWarning";
   defaultPolicyWarning: DefaultPolicyWarning;
@@ -180,6 +199,7 @@ export type Message =
   | ListViolationsCommand
   | ListViolationsByClusterCommand
   | ListViolationsByTypesCommand
+  | DefaultPoliciesCommand
   | DefaultPolicyWarningMessage
   | GetDefaultPolicyWarningCommand;
 
@@ -195,6 +215,7 @@ export function isMessage(message: any): message is Message {
     case "listViolations":
     case "listViolationsByCluster":
     case "listViolationsByType":
+    case "defaultPolicies":
       return "inspectedTabId" in message;
     case "defaultPolicyWarning":
       return "defaultPolicyWarning" in message;

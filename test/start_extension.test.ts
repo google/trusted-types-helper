@@ -19,7 +19,7 @@ import puppeteer from "puppeteer";
 import { Browser, Page, GoToOptions } from "puppeteer";
 import { openDevToolsPanel } from "./util";
 
-const POPUP_PAGE_FILENAME = "hello.html"; // Defined in manifest.json
+const POPUP_PAGE_FILENAME = "popup.html"; // Defined in manifest.json
 const DEV_SERVER = "http://127.0.0.1:3000"; // Defined in test_server.js
 const CHROME_TIMEOUT = 60_000; // 1 min
 const TEST_TIMEOUT = 300_000; // 5 min
