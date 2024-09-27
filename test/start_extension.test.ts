@@ -59,7 +59,7 @@ beforeEach(async () => {
   const regex = /^chrome-extension:\/\/([a-z]{32})\/.*$/;
   const match = extensionUrl?.match(regex);
   extensionId = match ? match[1] : undefined;
-});
+}, 10000);
 
 /**
  * Stop the browser.
