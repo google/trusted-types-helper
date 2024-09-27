@@ -3,6 +3,22 @@
 This project was generated with
 [Angular CLI](https://github.com/angular/angular-cli) version 17.3.7.
 
+## Updating NPM dependencies.
+
+Please run
+
+```bash
+npx ng update
+```
+
+and if that doesn't update a particular dependency that is causing conflicts for
+`npm audit fix`, you can specify that particular package for the Angular update,
+like:
+
+```bash
+npx ng update @angular-devkit/build-angular
+```
+
 ## Development server
 
 Run `ng serve` for a dev server. Navigate to `http://localhost:4200/`. The
