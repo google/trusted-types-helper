@@ -31,6 +31,8 @@ import {
   ViolationDataType,
   StackTrace,
   DefaultPolicyData,
+  sortClusterByMostRecent,
+  sortViolationsByTypesByMostRecent,
 } from '../../../common/common';
 import { NgClass, NgFor, CommonModule } from '@angular/common';
 import { TypeGroupComponent } from './type-group/type-group.component';
@@ -101,8 +103,12 @@ export class AppComponent {
   async populateViolations() {
     const response = await this.getViolationDataFromLocalStorage();
     if (this.selectedViewMode == 'byClusters') {
-      this.violationsByClusters = response;
+      this.violationsByClusters = response.forEach(
+        (cluster: TrustedTypesViolationCluster) =>
+          sortClusterByMostRecent(cluster),
+      );
     } else if (this.selectedViewMode == 'byTypes') {
+      sortViolationsByTypesByMostRecent(response);
       this.violationsByTypes = response;
     } else if (this.selectedViewMode == 'defaultPolicies') {
       this.defaultPolicyData = response;

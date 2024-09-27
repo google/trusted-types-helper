@@ -136,6 +136,20 @@ export function addViolationByType(
   return violationsByTypes;
 }
 
+// Reverses the order to have most recent violations first
+export function sortClusterByMostRecent(cluster: TrustedTypesViolationCluster) {
+  cluster.clusteredViolations.reverse();
+}
+
+// Reverses the order to have most recent violations first
+export function sortViolationsByTypesByMostRecent(
+  violationsByTypes: ViolationsByTypes,
+) {
+  violationsByTypes.HTML.reverse();
+  violationsByTypes.Script.reverse();
+  violationsByTypes.URL.reverse();
+}
+
 /**
  * Defines the structure of default policy allowlists.
  *

@@ -68,7 +68,6 @@ export class ClusterComponent implements OnInit {
   }
 
   ngOnInit() {
-    console.log('Hi');
     if (this.cluster) {
       console.log(this.cluster);
       this.firstSeen = new Date(
