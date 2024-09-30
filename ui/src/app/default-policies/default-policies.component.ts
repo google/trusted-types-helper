@@ -6,6 +6,7 @@ import {
   signal,
 } from '@angular/core';
 import { ViolationComponent } from '../violation/violation.component';
+import { Highlight } from 'ngx-highlightjs';
 import { NgClass, NgFor, NgIf } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
@@ -16,7 +17,7 @@ import { MatExpansionModule } from '@angular/material/expansion';
 @Component({
   selector: 'app-default-policy',
   standalone: true,
-  imports: [NgIf, MatCardModule],
+  imports: [Highlight, NgIf, MatCardModule],
   templateUrl: './default-policies.html',
   styleUrl: './default-policies.css',
 })
