@@ -120,7 +120,8 @@ test(
     }
     const panel = await openDevToolsPanel(browser, extensionId, (x) => fail(x));
 
-    // Get the text of the message box
+    // Get the text of the message box (wait a little for Angular to execute).
+    await new Promise((resolve) => setTimeout(resolve, 1000));
     const element = await panel.$("simple-snack-bar");
     const elementText = await element?.evaluate((el) => el.textContent);
 
@@ -145,7 +146,8 @@ test(
     }
     const panel = await openDevToolsPanel(browser, extensionId, (x) => fail(x));
 
-    // Get the text of the message box
+    // Get the text of the message box (wait a little for Angular to execute).
+    await new Promise((resolve) => setTimeout(resolve, 1000));
     const element = await panel.$("simple-snack-bar");
     const elementText = await element?.evaluate((el) => el.textContent);
 
