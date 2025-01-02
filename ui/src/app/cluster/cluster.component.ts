@@ -44,27 +44,22 @@ import { MatExpansionModule } from '@angular/material/expansion';
   ],
   templateUrl: './cluster.component.html',
   styleUrl: './cluster.component.css',
-  // To detect expand violations button changes
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ClusterComponent implements OnInit {
-  @Input()
-  cluster: TrustedTypesViolationCluster | undefined = undefined;
-  clusterMetadataMessages: string[] = [];
-  firstSeen: string = '';
+  @Input() cluster: TrustedTypesViolationCluster | undefined;
+  firstSeen: string | undefined;
   readonly panelOpenState = signal(false);
-  showFirstViolationOnly = true;
+  readonly showFirstViolationOnly = signal(true);
   expandOrHideViolationsMessage = 'Expand violations';
 
   toggleViolationVisibility() {
-    console.log('Mat button click before', this.showFirstViolationOnly);
-    this.showFirstViolationOnly = !this.showFirstViolationOnly;
-    if (this.showFirstViolationOnly == true) {
+    this.showFirstViolationOnly.set(!this.showFirstViolationOnly());
+    if (this.showFirstViolationOnly()) {
       this.expandOrHideViolationsMessage = 'Expand violations';
     } else {
       this.expandOrHideViolationsMessage = 'Hide violations';
     }
-    console.log('Mat button click after', this.showFirstViolationOnly);
   }
 
   ngOnInit() {
@@ -75,6 +70,4 @@ export class ClusterComponent implements OnInit {
       ).toUTCString();
     }
   }
-
-  ngOnChanges() {}
 }
