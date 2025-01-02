@@ -15,30 +15,35 @@
 -->
 
 <mat-card class="cluster-card">
-  <mat-card-header>
-    <mat-card-title>
-      <div
-        class="badge"
-        matBadge="{{ cluster?.metadata?.count }}"
-        matBadgeOverlap="false"
-      >
-        <div class="cluster-root-cause">{{ cluster?.metadata?.rootCause }}</div>
-      </div>
-    </mat-card-title>
-  </mat-card-header>
-  <mat-card-content>
-    <div class="first-seen">
-      <span class="highlight">First seen: </span>{{ firstSeen }}
-    </div>
+  @if (cluster?.metadata; as metadata) {
+    <mat-card-header>
+      <mat-card-title>
+        <div
+          class="badge"
+          matBadge="{{ metadata.count }}"
+          matBadgeOverlap="false"
+        >
+          <div class="cluster-root-cause">{{ metadata.rootCause }}</div>
+        </div>
+      </mat-card-title>
+    </mat-card-header>
+  }
 
-    <div *ngIf="showFirstViolationOnly == true">
+  <mat-card-content>
+    @if (firstSeen) {
+      <div class="first-seen">
+        <span class="highlight">First seen: </span>{{ firstSeen }}
+      </div>
+    }
+
+    <div *ngIf="showFirstViolationOnly()">
       <app-violation
         [violation]="cluster?.clusteredViolations?.[0]"
         [isFirstViolation]="true"
       >
       </app-violation>
     </div>
-    <div *ngIf="showFirstViolationOnly == false">
+    <div *ngIf="!showFirstViolationOnly()">
       <app-violation
         *ngFor="let violation of cluster?.clusteredViolations; let i = index"
         [violation]="violation"
@@ -57,6 +62,6 @@
           {{ expandOrHideViolationsMessage }}
         </button>
       </mat-card-actions>
-    </div>
+    }
   </mat-card-content>
 </mat-card>
