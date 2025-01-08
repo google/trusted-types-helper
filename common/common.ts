@@ -216,6 +216,14 @@ export interface SendSanitizedInputCommand {
   type: "sendSanitizedInput";
 }
 
+export interface ToggleOnOffSwitchCommand {
+  type: "toggleOnOffSwitch";
+}
+
+export interface GetOnOffSwitchStateCommand {
+  type: "getOnOffSwitchState";
+}
+
 /**
  * Each message has a specific structure based on its type. These structures
  * are used to represent different types of events, commands, or data transfers.
@@ -229,7 +237,9 @@ export type Message =
   | DefaultPolicyWarningMessage
   | GetDefaultPolicyWarningCommand
   | GetSanitizedInputCommand
-  | SendSanitizedInputCommand;
+  | SendSanitizedInputCommand
+  | ToggleOnOffSwitchCommand
+  | GetOnOffSwitchStateCommand;
 
 // TODO: Change this if the type above is updated.
 export function isMessage(message: any): message is Message {
@@ -250,6 +260,8 @@ export function isMessage(message: any): message is Message {
     case "getDefaultPolicyWarning":
     case "getSanitizedInput":
     case "sendSanitizedInput":
+    case "toggleOnOffSwitch":
+    case "getOnOffSwitchState":
       return true; // No additional properties to check
     default:
       return false; // Unknown message type

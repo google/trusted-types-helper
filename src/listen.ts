@@ -17,16 +17,37 @@
 import { Message } from "../common/common";
 import { sanitizeWithDOMPurify } from "./purify";
 
+// Content script calls the service worker
 self.addEventListener("message", (msg) => {
-  console.log("This is from listen: " + JSON.stringify(msg));
-  chrome.runtime.sendMessage(msg.data);
+  if (!msg.data) {
+    return;
+  }
+  console.log("listen.js -> SW: " + JSON.stringify(msg.data));
+  chrome.runtime.sendMessage(msg.data, (res) => {
+    // Response from the service worker should continue to the content script.
+    if (res) {
+      console.log(`SW -> listen.js: ${JSON.stringify(res)}`);
+      self.postMessage(res, "*");
+    }
+  });
 });
 
-chrome.runtime.onMessage.addListener((msg: Message, sender, sendResponse) => {
+// Service Worker calls the content script
+chrome.runtime.onMessage.addListener((msg: Message, _sender, sendResponse) => {
   console.log("msg from service worker in listen.ts: " + msg);
-  if (msg.type === "getSanitizedInput") {
-    console.log("received message from service worker to sanitize");
-    const res = sanitizeWithDOMPurify(msg.sanitized);
-    sendResponse(res);
+  // Pass along the service worker's initiated messages to the content script.
+  self.postMessage(msg, "*");
+  // Running sanitizers with the DOM environment is something that the service
+  // worker has to ask the content script to do (because the service worker
+  // does not have a DOM environment.)
+  switch (msg.type) {
+    case "getSanitizedInput":
+      console.log("received message from service worker to sanitize");
+      const res = sanitizeWithDOMPurify(msg.sanitized);
+      sendResponse(res);
+      break;
+    default:
+      return false;
   }
+  return false;
 });

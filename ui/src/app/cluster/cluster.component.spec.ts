@@ -193,7 +193,6 @@ describe('ClusterComponent', () => {
   it('should handle undefined or null cluster input gracefully', () => {
     component.cluster = undefined; // or null
     fixture.detectChanges();
-    debugger;
 
     // Check that the component doesn't throw errors and handles the undefined/null case
     const compiled = fixture.nativeElement as HTMLElement;
