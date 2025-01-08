@@ -18,7 +18,6 @@
 import { createOrUpdateCluster } from "../common/cluster";
 import {
   Message,
-  Violation,
   ViolationsByTypes,
   DefaultPolicyWarning,
   createDefaultPolicyWarning,
@@ -39,15 +38,11 @@ var defaultPolicyWarning: DefaultPolicyWarning = createDefaultPolicyWarning(
   "No warning yet.",
   false,
 );
+// TODO: Should this state go elsewhere? Or stay ephemeral?
+let onOffState = true;
 
 // Listens to the content script
 chrome.runtime.onMessage.addListener((msg: Message, sender, sendResponse) => {
-  // TODO: add a new msg type for popup button later
-  if ("action" in msg && msg.action === "ON/OFF clicked") {
-    console.log(msg.action);
-    return;
-  }
-
   switch (msg.type) {
     case "violationFound":
       if (sender.tab && sender.tab.id && !("error" in msg.violationData)) {
@@ -132,8 +127,18 @@ chrome.runtime.onMessage.addListener((msg: Message, sender, sendResponse) => {
       break;
     case "getDefaultPolicyWarning":
       sendResponse(defaultPolicyWarning);
+      return false;
+    case "toggleOnOffSwitch":
+      onOffState = !onOffState;
       break;
+    case "getOnOffSwitchState":
+      sendResponse({ onOffState: onOffState });
+      return false;
   }
+  // Send back empty message and return false to indicate we are done in case
+  // anyone is listening (because listen.js is always listening now).
+  sendResponse(undefined);
+  return false;
 });
 
 if (chrome.webRequest !== undefined) {
