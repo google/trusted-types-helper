@@ -28,17 +28,20 @@ import {
 } from "../common/common";
 import { TrustedTypesWindow } from "trusted-types/lib";
 
-import DOMPurify from "dompurify";
-
-// Alert when there is an error in case the user already has a default policy,
-// the extension policy may be set first and when the user's default policy
-// is set an error occurs.
-addEventListener("error", (event) => {
+/**
+ * Checks whether the error from the ErrorEvent is one that is a failure to
+ * write a default policy and then sends the appropriate events to the rest of
+ * the extension and warns the user.
+ *
+ * @param error The error extracted from the error event
+ * @returns Whether this was a default policy overwrite error
+ */
+function sendDefaultPolicyOverwriteErrorMessage(error: Error) {
   if (
-    event.error.name == "TypeError" &&
-    event.error.message.includes('Policy with name "default" already exists')
+    error.name == "TypeError" &&
+    error.message.includes('Policy with name "default" already exists')
   ) {
-    const msg = {
+    const msg: Message = {
       type: "defaultPolicyWarning",
       defaultPolicyWarning: createDefaultPolicyWarning(
         "Failed to overwrite the extension's default policy.",
@@ -47,67 +50,24 @@ addEventListener("error", (event) => {
     };
     window.postMessage(msg, "*");
     alert(
-      "Failed to overwrite the default policy set by the Trusted Types Helper extension.",
+      "Failed to overwrite the default policy set by the Trusted Types Helper extension. This page not work as expected, so please turn off Trusted Types Helper and refresh the page.",
     );
+    return true;
   }
-});
+  return false;
+}
 
+/**
+ * Artifically creates an error object at this location in the code so that
+ * we can get a stack trace of where we are in the JavaScript source.
+ *
+ * @returns An unformatted string of the stack trace where the error object is
+ * created
+ */
 function getStackTrace(): string | undefined {
   var err = new Error();
   return err.stack;
 }
-
-try {
-  const tt = (self as unknown as TrustedTypesWindow).trustedTypes;
-  if (!tt) {
-    throw new Error("Browser does not support Trusted Types");
-  }
-
-  tt.createPolicy("default", {
-    createHTML: (string) => {
-      window.postMessage(createMessage(string, "HTML"), "*");
-      return string;
-    },
-
-    createScript: (string) => {
-      window.postMessage(createMessage(string, "Script"), "*");
-      return string;
-    },
-
-    createScriptURL: (string) => {
-      window.postMessage(createMessage(string, "URL"), "*");
-      return string;
-    },
-  });
-} catch (error) {
-  // Although JavaScript allows you to throw any value (including not Error's), in the try-statement
-  // above, we either only fail a system call to trustedTypes.createPolicy (generating an Error) or
-  // manually throw an Error in case self.trustedTypes is not available.
-  if (error instanceof Error) {
-    console.error(
-      "Trusted Types Default Policy Creation Failed:",
-      error.message,
-    );
-    const msg = {
-      type: "defaultPolicyWarning",
-      defaultPolicyWarning: createDefaultPolicyWarning(
-        "Trusted Types Default Policy creation failed.",
-        false,
-      ),
-    };
-    window.postMessage(msg, "*");
-  }
-}
-
-// When page reloads, these lines will get executed
-const msg = {
-  type: "defaultPolicyWarning",
-  defaultPolicyWarning: createDefaultPolicyWarning(
-    "Trusted Types Default Policy was created.",
-    true,
-  ),
-};
-window.postMessage(msg, "*");
 
 /**
  * Creates a Message object representing a violation.
@@ -149,3 +109,93 @@ function createMessage(string: string, type: ViolationType): Message {
 
   return msg;
 }
+
+// Alert when there is an error in case the user already has a default policy,
+//
+// This runs in case the extension policy is set first and as a result the
+// user's default policy fails to be created (since the extension created the
+// default policy first.)
+addEventListener("error", (event) => {
+  sendDefaultPolicyOverwriteErrorMessage(event.error);
+});
+
+// Main logic for attempting to set a default policy to intercept Trusted Types
+// violations on the page.
+//
+// Only run this after we have confirmed that the extension is configured to
+// overwrite the default policy / Trusted Types on the page.
+window.addEventListener("message", (event) => {
+  const response = event.data;
+  if (response && "onOffState" in response) {
+    if (response.onOffState) {
+      console.log(`Global switch state is: ${JSON.stringify(response)}`);
+      try {
+        const tt = (self as unknown as TrustedTypesWindow).trustedTypes;
+        if (!tt) {
+          throw new Error("Browser does not support Trusted Types");
+        }
+
+        tt.createPolicy("default", {
+          createHTML: (string) => {
+            window.postMessage(createMessage(string, "HTML"), "*");
+            return string;
+          },
+
+          createScript: (string) => {
+            window.postMessage(createMessage(string, "Script"), "*");
+            return string;
+          },
+
+          createScriptURL: (string) => {
+            window.postMessage(createMessage(string, "URL"), "*");
+            return string;
+          },
+        });
+
+        const msg: Message = {
+          type: "defaultPolicyWarning",
+          defaultPolicyWarning: createDefaultPolicyWarning(
+            "Trusted Types Default Policy was created.",
+            true,
+          ),
+        };
+        window.postMessage(msg, "*");
+      } catch (error) {
+        // Although JavaScript allows you to throw any value (including not Error's), in the try-statement
+        // above, we either only fail a system call to trustedTypes.createPolicy (generating an Error) or
+        // manually throw an Error in case self.trustedTypes is not available.
+        if (
+          error instanceof Error &&
+          // Try to see whether this is a default policy overwrite error
+          // and handle the generic error alerting if it's not an overwrite
+          // error.
+          !sendDefaultPolicyOverwriteErrorMessage(error)
+        ) {
+          console.error(
+            "Trusted Types Default Policy Creation Failed:",
+            error.message,
+          );
+          const msg: Message = {
+            type: "defaultPolicyWarning",
+            defaultPolicyWarning: createDefaultPolicyWarning(
+              "Trusted Types Default Policy creation failed.",
+              false,
+            ),
+          };
+          window.postMessage(msg, "*");
+        }
+      }
+    } else {
+      console.log(
+        `Not adding TT to this page because global state was ${JSON.stringify(response)}`,
+      );
+    }
+  } else {
+    console.log(`content.js ignoring message: ${JSON.stringify(response)}`);
+  }
+});
+
+// The extension should start execution by asking for whether to try injecting
+// a default policy to intercept Trusted Types violations.
+const onOffStateMsg: Message = { type: "getOnOffSwitchState" };
+window.postMessage(onOffStateMsg, "*");
