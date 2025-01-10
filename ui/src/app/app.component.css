@@ -30,3 +30,7 @@
     background-color: rgb(189, 239, 252);
   }
 }
+
+.card-container {
+  padding: 20px; /* Add padding around the card */
+}
