@@ -14,12 +14,16 @@
  * limitations under the License.
  */
 
-import { TestBed } from '@angular/core/testing';
+import {
+  TestBed,
+  fakeAsync,
+  tick,
+  discardPeriodicTasks,
+} from '@angular/core/testing';
 import { AppComponent } from './app.component';
 import {
   isMessage,
   ViolationDataType,
-  Violation,
   StackFrameOrError,
   Message,
   createViolation,
@@ -69,6 +73,7 @@ describe('AppComponent', () => {
       ),
     ],
   };
+  let onOffState = true; // Start with extension turned on, like real life.
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
@@ -78,16 +83,29 @@ describe('AppComponent', () => {
 
     // Mock chrome.runtime.sendMessage and chrome.devtools.inspectedWindow.tabId
     chromeRuntimeMock = jasmine.createSpyObj('chrome.runtime', ['sendMessage']);
-    const fakeSendMessage = (message: Message) => {
+    const fakeSendMessage = (
+      message: Message,
+      callback: (...args: any) => void,
+    ) => {
       // While this type guard isn't strictly necessary, this avoids crashing on
       // the UI sending unusual messages.
       if (isMessage(message)) {
         switch (message.type) {
           case 'listViolationsByType':
+            callback && callback(listViolationsResponse);
             return Promise.resolve(listViolationsResponse);
           case 'listViolationsByCluster':
+            callback && callback([]);
             return Promise.resolve([]); // TODO: Better value for this
+          case 'getOnOffSwitchState':
+            callback && callback({ onOffState: onOffState });
+            return Promise.resolve({ onOffState: onOffState });
+          case 'toggleOnOffSwitch':
+            onOffState = !onOffState;
+            callback && callback();
+            return Promise.resolve();
           default:
+            callback && callback();
             return Promise.resolve();
         }
       }
@@ -101,6 +119,11 @@ describe('AppComponent', () => {
         tabId: 0,
       } as typeof chrome.devtools.inspectedWindow,
     } as typeof chrome.devtools;
+  });
+
+  afterEach(() => {
+    // Reset to the default value.
+    onOffState = true;
   });
 
   it('should create the app', () => {
@@ -132,18 +155,20 @@ describe('AppComponent', () => {
     expect(fixture.componentInstance.selectedViewMode).toEqual('byClusters');
   });
 
-  it('should render violations data when displaying by types', async () => {
+  it('should render violations data when displaying by types', fakeAsync(() => {
     const fixture = TestBed.createComponent(AppComponent);
     fixture.detectChanges();
 
     // Trigger the event that will fetch and render the violations.
-    await fixture.componentInstance.populateViolations();
+    fixture.componentInstance.populateViolations();
+    tick(10_000); // Instead of awaiting, see whether we can just advance timer.
     fixture.detectChanges();
     const toggles = fixture.debugElement.queryAll(By.css('mat-button-toggle'));
     toggles
       .find((node) => node.nativeElement.textContent === 'By Types')!
       .nativeElement.childNodes[0].click();
-    await fixture.whenStable();
+    fixture.whenStable();
+    tick(10_000);
     fixture.detectChanges();
 
     // Expand everything.
@@ -171,5 +196,90 @@ describe('AppComponent', () => {
         expect(allRenderedMessages).toContain(violation.type);
       }
     }
+
+    // Make sure that future tick(...) calls will work.
+    discardPeriodicTasks();
+  }));
+
+  it('should poll for extension on/off state', fakeAsync(() => {
+    const fixture = TestBed.createComponent(AppComponent);
+    fixture.detectChanges();
+
+    // Check initial state (invisible)
+    expect(fixture.componentInstance.onOffToggleDisabled).toBe(false);
+    expect(fixture.componentInstance.onOffToggleButtonText).toBe('Turn On');
+
+    // Advance time by (more than) 10 seconds to trigger the polling
+    tick(20_000);
+    fixture.detectChanges();
+
+    // Assertions after the first poll (extension on to start with)
+    expect(chromeRuntimeMock.sendMessage.calls.mostRecent().args[0]).toEqual({
+      type: 'getOnOffSwitchState',
+    });
+    // Check if the "Extension is turned off" message is invisible
+    let offMessage = fixture.debugElement.query(
+      By.css('.card-container mat-card-content'),
+    );
+    expect(offMessage).toBeFalsy();
+
+    // Mock the response for the second poll (extension turned off)
+    onOffState = false;
+
+    tick(20_000); // Advance time again
+    fixture.detectChanges();
+
+    // Assertions after the second poll (extension is off, warning is visible)
+    // Check if the "Extension is turned off" message is visible
+    offMessage = fixture.debugElement.query(
+      By.css('.card-container mat-card-content'),
+    );
+    expect(offMessage).toBeTruthy();
+    expect(offMessage.nativeElement.textContent).toContain(
+      'Extension is turned off',
+    );
+
+    // Check that the button is clickable and turns on the extension.
+    const button = fixture.debugElement.query(
+      By.css('.card-container mat-card-actions button'),
+    );
+    expect(button).toBeTruthy();
+    button.triggerEventHandler('click', null);
+    fixture.detectChanges();
+
+    // Message is correct
+    expect(fixture.componentInstance.onOffToggleDisabled).toBe(true);
+    expect(fixture.componentInstance.onOffToggleButtonText).toBe('Loading...');
+    expect(button.nativeElement.disabled).toBe(true);
+    expect(button.nativeElement.textContent).toContain('Loading...');
+
+    tick(20_000); // Advance time again
+    fixture.detectChanges();
+
+    // Check if the "Extension is turned off" message is invisible
+    offMessage = fixture.debugElement.query(
+      By.css('.card-container mat-card-content'),
+    );
+    expect(offMessage).toBeFalsy();
+
+    // Changed backend state.
+    expect(onOffState).toBe(true);
+
+    // Make sure that future tick(...) calls will work.
+    discardPeriodicTasks();
+  }));
+
+  it('should toggle extension on/off', () => {
+    const fixture = TestBed.createComponent(AppComponent);
+    fixture.detectChanges();
+    const component = fixture.componentInstance;
+
+    component.toggleExtensionOnOff();
+
+    expect(chromeRuntimeMock.sendMessage).toHaveBeenCalledWith({
+      type: 'toggleOnOffSwitch',
+    });
+    expect(component.onOffToggleDisabled).toBe(true);
+    expect(component.onOffToggleButtonText).toBe('Loading...');
   });
 });
