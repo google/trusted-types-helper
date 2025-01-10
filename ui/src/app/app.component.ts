@@ -36,7 +36,8 @@ import { ViolationComponent } from './violation/violation.component';
 import { WarningComponent } from './warning/warning.component';
 import { ClusterComponent } from './cluster/cluster.component';
 import { DefaultPolicyComponent } from './default-policies/default-policies.component';
-import { BehaviorSubject, Observable } from 'rxjs';
+import { BehaviorSubject, Observable, interval } from 'rxjs';
+import { switchMap } from 'rxjs/operators';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
@@ -45,6 +46,15 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { TrustedTypesViolationCluster } from '../../../common/common';
+import { TimeAgoPipe } from './shared/pipes/time-ago.pipe';
+
+/**
+ * Tuple for how recently we polled for extension on/off status.
+ */
+interface OnOffSwitchState {
+  state: boolean;
+  timestamp: Date;
+}
 
 @Component({
   selector: 'app-root',
@@ -66,6 +76,7 @@ import { TrustedTypesViolationCluster } from '../../../common/common';
     FormsModule,
     MatButtonModule,
     MatCardModule,
+    TimeAgoPipe,
   ],
   templateUrl: './app.component.html',
   styleUrl: './app.component.css',
@@ -73,6 +84,12 @@ import { TrustedTypesViolationCluster } from '../../../common/common';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AppComponent {
+  // TODO: These should eventually move to their own "Extension OFF component"
+  onOffSwitchState$: Observable<OnOffSwitchState>;
+  onOffToggleDisabled = false;
+  onOffToggleButtonText = 'Turn On';
+  onOffLastSwitchState: OnOffSwitchState | undefined = undefined;
+
   showFirstViolationOnly = true;
   expandOrHideViolationsMessage = 'Expand violations';
   message = 'No message yet.';
@@ -99,7 +116,29 @@ export class AppComponent {
     this.defaultPolicyWarningSubject.asObservable();
   selectedViewMode: 'byClusters' | 'byTypes' | 'defaultPolicies' = 'byClusters'; // Default viewing mode
 
-  constructor(private cdr: ChangeDetectorRef) {}
+  constructor(private cdr: ChangeDetectorRef) {
+    // Call every ten seconds to poll for extension on/off status.
+    this.onOffSwitchState$ = interval(10_000).pipe(
+      switchMap(() => {
+        return new Observable<OnOffSwitchState>((observer) => {
+          const msg: Message = {
+            type: 'getOnOffSwitchState',
+          };
+          chrome.runtime.sendMessage(msg, (response) => {
+            if (response && 'onOffState' in response) {
+              const res = {
+                state: response.onOffState,
+                timestamp: new Date(),
+              };
+              observer.next(res);
+              this.onOffLastSwitchState = res;
+            }
+            observer.complete();
+          });
+        });
+      }),
+    );
+  }
 
   async populateViolations() {
     const response = await this.getViolationDataFromLocalStorage();
@@ -158,6 +197,20 @@ export class AppComponent {
     } else {
       this.expandOrHideViolationsMessage = 'Hide violations';
     }
+  }
+
+  /**
+   * Send a message to the service worker that we are flipping the ON/OFF
+   *
+   * TODO: Move to own "Extension OFF component"
+   */
+  toggleExtensionOnOff() {
+    const msg: Message = {
+      type: 'toggleOnOffSwitch',
+    };
+    chrome.runtime.sendMessage(msg);
+    this.onOffToggleDisabled = true;
+    this.onOffToggleButtonText = 'Loading...';
   }
 
   ngOnInit() {
