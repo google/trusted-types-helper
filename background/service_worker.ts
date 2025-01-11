@@ -79,7 +79,7 @@ chrome.runtime.onMessage.addListener((msg: Message, sender, sendResponse) => {
     case "listViolationsByCluster":
       if (msg.inspectedTabId) {
         chrome.storage.local.get(msg.inspectedTabId.toString(), (result) => {
-          sendResponse(result[msg.inspectedTabId]);
+          sendResponse(result[msg.inspectedTabId] || []);
         });
       }
       return true;
@@ -91,7 +91,7 @@ chrome.runtime.onMessage.addListener((msg: Message, sender, sendResponse) => {
             Script: [],
             URL: [],
           };
-          for (const cluster of result[msg.inspectedTabId]) {
+          for (const cluster of result[msg.inspectedTabId] || []) {
             for (const violation of cluster.clusteredViolations) {
               violationsByType = addViolationByType(
                 violation,
@@ -112,11 +112,13 @@ chrome.runtime.onMessage.addListener((msg: Message, sender, sendResponse) => {
             console.log(
               "msg sending from service worker to app component: " +
                 JSON.stringify(
-                  await DefaultPolicyData.init(result[msg.inspectedTabId]),
+                  await DefaultPolicyData.init(
+                    result[msg.inspectedTabId] || [],
+                  ),
                 ),
             );
             sendResponse(
-              await DefaultPolicyData.init(result[msg.inspectedTabId]),
+              await DefaultPolicyData.init(result[msg.inspectedTabId] || []),
             );
           },
         );

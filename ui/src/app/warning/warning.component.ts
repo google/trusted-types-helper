@@ -31,7 +31,7 @@ export class WarningComponent implements OnInit {
   constructor(private snackBar: MatSnackBar) {}
 
   @Input()
-  defaultPolicyWarning: DefaultPolicyWarning | null = null;
+  defaultPolicyWarning: DefaultPolicyWarning | undefined;
   isSuccess = false;
   message = 'No message yet.';
 

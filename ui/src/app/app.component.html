@@ -18,7 +18,7 @@
   <div class="content">
     @if (onOffSwitchState$ | async; as onOffState) {
       @if (!onOffState.state) {
-        <div class="card-container">
+        <div class="card-container extension-off-warning">
           <mat-card appearance="raised">
             <mat-card-content>
               Extension is turned off (last checked
@@ -39,14 +39,12 @@
       }
     }
 
-    <app-warning
-      [defaultPolicyWarning]="defaultPolicyWarning$ | async"
-    ></app-warning>
+    <app-warning [defaultPolicyWarning]="defaultPolicyWarning$()"></app-warning>
 
     <mat-button-toggle-group
       [(ngModel)]="selectedViewMode"
       aria-label="View Mode"
-      (change)="populateViolations()"
+      (change)="onViewGroupChange()"
       class="button"
     >
       <mat-button-toggle value="byClusters">By Clusters</mat-button-toggle>
@@ -56,34 +54,63 @@
       >
     </mat-button-toggle-group>
 
-    <div *ngIf="selectedViewMode === 'byClusters'">
-      <div class="violation-cards">
-        <div *ngFor="let cluster of violationsByClusters">
-          <app-cluster [cluster]="cluster"></app-cluster>
-        </div>
-      </div>
-    </div>
-
-    <div *ngIf="selectedViewMode === 'byTypes'">
-      <div class="violation-cards">
-        <app-type-group
-          *ngIf="violationsByTypes.HTML.length >= 1"
-          [violationGroupByType]="violationsByTypes.HTML"
-        ></app-type-group>
-        <app-type-group
-          *ngIf="violationsByTypes.Script.length >= 1"
-          [violationGroupByType]="violationsByTypes.Script"
-        ></app-type-group>
-        <app-type-group
-          *ngIf="violationsByTypes.URL.length >= 1"
-          [violationGroupByType]="violationsByTypes.URL"
-        ></app-type-group>
-      </div>
-    </div>
-
-    <div *ngIf="selectedViewMode === 'defaultPolicies'">
-      <app-default-policy [defaultPolicies]="defaultPolicyData">
-      </app-default-policy>
-    </div>
+    @switch (selectedViewMode) {
+      @case ("byClusters") {
+        @if (violationsByClusters$ | async; as violationsByClusters) {
+          @if (violationsByClusters.length > 0) {
+            <div class="violation-cards">
+              @for (
+                cluster of violationsByClusters;
+                track cluster.metadata.id
+              ) {
+                <app-cluster [cluster]="cluster"></app-cluster>
+              }
+            </div>
+          } @else {
+            <div class="card-container">
+              <mat-card appearance="raised">
+                <mat-card-content>
+                  No violations yet! Click around the page to see if there are
+                  any!
+                </mat-card-content>
+              </mat-card>
+            </div>
+          }
+        } @else {
+          <p>Loading...</p>
+        }
+      }
+      @case ("byTypes") {
+        @if (violationsByTypes$ | async; as violationsByTypes) {
+          <div class="violation-cards">
+            @if (violationsByTypes.HTML; as violationGroupByType) {
+              <app-type-group
+                [violationGroupByType]="violationGroupByType"
+              ></app-type-group>
+            }
+            @if (violationsByTypes.Script; as violationGroupByType) {
+              <app-type-group
+                [violationGroupByType]="violationGroupByType"
+              ></app-type-group>
+            }
+            @if (violationsByTypes.URL; as violationGroupByType) {
+              <app-type-group
+                [violationGroupByType]="violationGroupByType"
+              ></app-type-group>
+            }
+          </div>
+        } @else {
+          <p>Loading...</p>
+        }
+      }
+      @case ("defaultPolicies") {
+        @if (defaultPolicyData$ | async; as defaultPolicies) {
+          <app-default-policy [defaultPolicies]="defaultPolicies">
+          </app-default-policy>
+        } @else {
+          <p>Loading...</p>
+        }
+      }
+    }
   </div>
 </main>
