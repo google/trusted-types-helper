@@ -1,6 +1,6 @@
 /// <reference types="chrome"/>
 
-import { HTMLData, Message, Violation } from "./common";
+import { HTMLData, TrustedTypesViolationCluster, Violation } from "./common";
 
 import { parseHTML } from "linkedom";
 
@@ -22,25 +22,14 @@ async function sanitize(input: string): Promise<string> {
 }
 
 async function organizeDefaultPolicyData(
-  violations: any,
+  violations: TrustedTypesViolationCluster[],
 ): Promise<DefaultPolicyData> {
-  var defaultPolicyData: DefaultPolicyData = {
-    HTML: {
-      tags: [],
-      attrs: [],
-      violationFragment: [],
-      allowlist: [],
-    },
-    Script: [],
-    URL: [],
-  };
+  var defaultPolicyData: DefaultPolicyData = DefaultPolicyData.empty();
   for (const cluster of violations) {
-    await addToAllowList(
+    defaultPolicyData = await addToAllowList(
       cluster.clusteredViolations[0],
       defaultPolicyData,
-    ).then((input) => {
-      defaultPolicyData = input;
-    });
+    );
   }
   return defaultPolicyData;
 }
@@ -128,6 +117,9 @@ function parseHTMLContent(
 /**
  * Organizes metadata to generate default policies.
  *
+ * TODO: There are no class-level methods on here, only statics, so maybe we
+ * should refactor into interfaces.
+ *
  * @class DefaultPolicyData
  * @param {any} clusters A list of violations the page contains.
  * @property {HTMLData} HTML A metadata necessary to generate default policies.
@@ -139,8 +131,23 @@ export class DefaultPolicyData {
   Script: Array<string>;
   URL: Array<string>;
 
-  static async init(clusters: any): Promise<DefaultPolicyData> {
-    var data: DefaultPolicyData = {
+  static async init(
+    clusters: TrustedTypesViolationCluster[],
+  ): Promise<DefaultPolicyData> {
+    const computedDefaultPolicyData = await organizeDefaultPolicyData(clusters);
+    console.log(
+      "organizeDefaultPolicyData() finished with: " +
+        JSON.stringify(computedDefaultPolicyData),
+    );
+    return new DefaultPolicyData(computedDefaultPolicyData);
+  }
+
+  /**
+   * To make testing and other initializations easier.
+   * @returns An empty structure
+   */
+  static empty(): DefaultPolicyData {
+    return {
       HTML: {
         tags: [],
         attrs: [],
@@ -150,16 +157,12 @@ export class DefaultPolicyData {
       Script: [],
       URL: [],
     };
-    await organizeDefaultPolicyData(clusters).then((input) => {
-      console.log(
-        "organizeDefaultPolicyData() in Default policy class is called",
-      );
-      data = input;
-    });
-    console.log("data for dp: " + JSON.stringify(data));
-    return new DefaultPolicyData(data);
   }
 
+  /**
+   * TODO: Maybe we need this for rehydration? We'll clean this up later.
+   * @param data A JSON that looks almost the same as this class.
+   */
   constructor(data: DefaultPolicyData) {
     this.HTML = data.HTML;
     this.Script = data.Script;

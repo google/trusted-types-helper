@@ -36,27 +36,29 @@
       </div>
     }
 
-    <div *ngIf="showFirstViolationOnly()">
+    @if (showFirstViolationOnly()) {
       <app-violation
         [violation]="cluster?.clusteredViolations?.[0]"
         [isFirstViolation]="true"
       >
       </app-violation>
-    </div>
-    <div *ngIf="!showFirstViolationOnly()">
-      <app-violation
-        *ngFor="let violation of cluster?.clusteredViolations; let i = index"
-        [violation]="violation"
-        [isFirstViolation]="i === 0"
-      ></app-violation>
-    </div>
-    <div
-      *ngIf="
-        cluster &&
-        cluster.clusteredViolations &&
-        cluster.clusteredViolations.length > 1
-      "
-    >
+    } @else {
+      @for (
+        violation of cluster?.clusteredViolations;
+        track $index;
+        let i = $index
+      ) {
+        <app-violation
+          [violation]="violation"
+          [isFirstViolation]="i === 0"
+        ></app-violation>
+      }
+    }
+    @if (
+      cluster &&
+      cluster.clusteredViolations &&
+      cluster.clusteredViolations.length > 1
+    ) {
       <mat-card-actions>
         <button mat-button (click)="toggleViolationVisibility()">
           {{ expandOrHideViolationsMessage }}
