@@ -16,18 +16,12 @@
 
 /// <reference types="chrome"/>
 // import {chrome} from '@types/chrome';
-import {
-  ChangeDetectionStrategy,
-  ChangeDetectorRef,
-  Component,
-} from '@angular/core';
+import { Component, signal } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import {
   DefaultPolicyWarning,
   Message,
   ViolationsByTypes,
-  sortClusterByMostRecent,
-  sortViolationsByTypesByMostRecent,
 } from '../../../common/common';
 import { DefaultPolicyData } from '../../../common/default-policies';
 import { NgClass, NgFor, CommonModule } from '@angular/common';
@@ -36,7 +30,7 @@ import { ViolationComponent } from './violation/violation.component';
 import { WarningComponent } from './warning/warning.component';
 import { ClusterComponent } from './cluster/cluster.component';
 import { DefaultPolicyComponent } from './default-policies/default-policies.component';
-import { BehaviorSubject, Observable, interval } from 'rxjs';
+import { Observable, interval } from 'rxjs';
 import { switchMap } from 'rxjs/operators';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -47,6 +41,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { TrustedTypesViolationCluster } from '../../../common/common';
 import { TimeAgoPipe } from './shared/pipes/time-ago.pipe';
+import { ViolationDataService } from './shared/services/violation-data.service';
 
 /**
  * Tuple for how recently we polled for extension on/off status.
@@ -80,15 +75,17 @@ interface OnOffSwitchState {
   ],
   templateUrl: './app.component.html',
   styleUrl: './app.component.css',
-  // To detect toggle button changes
-  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AppComponent {
   // TODO: These should eventually move to their own "Extension OFF component"
   onOffSwitchState$: Observable<OnOffSwitchState>;
   onOffToggleDisabled = false;
   onOffToggleButtonText = 'Turn On';
-  onOffLastSwitchState: OnOffSwitchState | undefined = undefined;
+
+  // Data sources from service_worker.ts
+  violationsByTypes$: Observable<ViolationsByTypes>;
+  violationsByClusters$: Observable<TrustedTypesViolationCluster[]>;
+  defaultPolicyData$: Observable<DefaultPolicyData>;
 
   showFirstViolationOnly = true;
   expandOrHideViolationsMessage = 'Expand violations';
@@ -110,13 +107,17 @@ export class AppComponent {
     Script: [],
     URL: [],
   };
-  defaultPolicyWarningSubject =
-    new BehaviorSubject<DefaultPolicyWarning | null>(null);
-  defaultPolicyWarning$: Observable<DefaultPolicyWarning | null> =
-    this.defaultPolicyWarningSubject.asObservable();
+  defaultPolicyWarning$ = signal<DefaultPolicyWarning | undefined>(undefined);
   selectedViewMode: 'byClusters' | 'byTypes' | 'defaultPolicies' = 'byClusters'; // Default viewing mode
 
-  constructor(private cdr: ChangeDetectorRef) {
+  constructor(private violationDataService: ViolationDataService) {
+    // Set the data sources from our service_worker.ts
+    this.violationsByTypes$ = this.violationDataService.violationDataByType$;
+    this.violationsByClusters$ =
+      this.violationDataService.violationDataByCluster$;
+    this.defaultPolicyData$ =
+      this.violationDataService.violationDataByDefaultPolicies$;
+
     // Call every ten seconds to poll for extension on/off status.
     this.onOffSwitchState$ = interval(10_000).pipe(
       switchMap(() => {
@@ -131,63 +132,41 @@ export class AppComponent {
                 timestamp: new Date(),
               };
               observer.next(res);
-              this.onOffLastSwitchState = res;
             }
             observer.complete();
           });
         });
       }),
     );
+
+    // Call once during construction to see whether there is a status on
+    // the default policy creation.
+    chrome.runtime.sendMessage(
+      {
+        type: 'getDefaultPolicyWarning',
+      },
+      (res) => {
+        this.defaultPolicyWarning$.set(res);
+      },
+    );
+
+    // Kick off the initial data fetching.
+    this.refreshDataByType();
+    this.refreshDataByCluster();
+    this.refreshDataByDefaultPolicies();
   }
 
-  async populateViolations() {
-    const response = await this.getViolationDataFromLocalStorage();
-    if (this.selectedViewMode == 'byClusters') {
-      this.violationsByClusters = response.forEach(
-        (cluster: TrustedTypesViolationCluster) =>
-          sortClusterByMostRecent(cluster),
-      );
-    } else if (this.selectedViewMode == 'byTypes') {
-      sortViolationsByTypesByMostRecent(response);
-      this.violationsByTypes = response;
-    } else if (this.selectedViewMode == 'defaultPolicies') {
-      console.log('testing app component: ');
-      this.defaultPolicyData = response;
-      console.log(
-        'retriving response in app component: ' + JSON.stringify(response),
-      );
-    }
-    // Trigger re-render because this assignment might happen after the initial
-    // paint in ngOnInit().
-    this.cdr.detectChanges();
+  private refreshDataByType() {
+    console.log(`Calling refreshDataByType from app.component.ts`);
+    this.violationDataService.refreshDataByType();
   }
 
-  async getViolationDataFromLocalStorage() {
-    const message: Message = {
-      type: this.getMessageTypeFromViewMode(),
-      inspectedTabId: chrome.devtools.inspectedWindow.tabId,
-    };
-    console.log('message: ');
-    console.log(message);
-    const response = await chrome.runtime.sendMessage(message);
-
-    return response;
+  private refreshDataByCluster() {
+    this.violationDataService.refreshDataByCluster();
   }
 
-  getMessageTypeFromViewMode() {
-    if (this.selectedViewMode == 'byTypes') {
-      return 'listViolationsByType';
-    } else if (this.selectedViewMode == 'defaultPolicies') {
-      return 'defaultPolicies';
-    }
-    return 'listViolationsByCluster';
-  }
-
-  async updateDefaultPolicyData() {
-    const defaultPolicyWarning = await chrome.runtime.sendMessage({
-      type: 'getDefaultPolicyWarning',
-    });
-    this.defaultPolicyWarningSubject.next(defaultPolicyWarning);
+  private refreshDataByDefaultPolicies() {
+    this.violationDataService.refreshDataByDefaultPolicies();
   }
 
   toggleViolationVisibility() {
@@ -213,8 +192,19 @@ export class AppComponent {
     this.onOffToggleButtonText = 'Loading...';
   }
 
-  ngOnInit() {
-    this.updateDefaultPolicyData();
-    this.populateViolations();
+  onViewGroupChange() {
+    console.log(`onViewGroupChange triggered: ${this.selectedViewMode}`);
+    switch (this.selectedViewMode) {
+      case 'byClusters':
+        this.refreshDataByCluster();
+        break;
+      case 'byTypes':
+        console.log(`Calling this.refreshDataByType()`);
+        this.refreshDataByType();
+        break;
+      case 'defaultPolicies':
+        this.refreshDataByDefaultPolicies();
+        break;
+    }
   }
 }

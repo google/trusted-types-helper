@@ -160,7 +160,6 @@ describe('AppComponent', () => {
     fixture.detectChanges();
 
     // Trigger the event that will fetch and render the violations.
-    fixture.componentInstance.populateViolations();
     tick(10_000); // Instead of awaiting, see whether we can just advance timer.
     fixture.detectChanges();
     const toggles = fixture.debugElement.queryAll(By.css('mat-button-toggle'));
@@ -214,12 +213,15 @@ describe('AppComponent', () => {
     fixture.detectChanges();
 
     // Assertions after the first poll (extension on to start with)
-    expect(chromeRuntimeMock.sendMessage.calls.mostRecent().args[0]).toEqual({
-      type: 'getOnOffSwitchState',
-    });
+    expect(chromeRuntimeMock.sendMessage).toHaveBeenCalledWith(
+      {
+        type: 'getOnOffSwitchState',
+      },
+      jasmine.any(Function),
+    );
     // Check if the "Extension is turned off" message is invisible
     let offMessage = fixture.debugElement.query(
-      By.css('.card-container mat-card-content'),
+      By.css('.card-container.extension-off-warning mat-card-content'),
     );
     expect(offMessage).toBeFalsy();
 
@@ -232,7 +234,7 @@ describe('AppComponent', () => {
     // Assertions after the second poll (extension is off, warning is visible)
     // Check if the "Extension is turned off" message is visible
     offMessage = fixture.debugElement.query(
-      By.css('.card-container mat-card-content'),
+      By.css('.card-container.extension-off-warning mat-card-content'),
     );
     expect(offMessage).toBeTruthy();
     expect(offMessage.nativeElement.textContent).toContain(
@@ -241,7 +243,7 @@ describe('AppComponent', () => {
 
     // Check that the button is clickable and turns on the extension.
     const button = fixture.debugElement.query(
-      By.css('.card-container mat-card-actions button'),
+      By.css('.card-container.extension-off-warning mat-card-actions button'),
     );
     expect(button).toBeTruthy();
     button.triggerEventHandler('click', null);
@@ -258,7 +260,7 @@ describe('AppComponent', () => {
 
     // Check if the "Extension is turned off" message is invisible
     offMessage = fixture.debugElement.query(
-      By.css('.card-container mat-card-content'),
+      By.css('.card-container.extension-off-warning mat-card-content'),
     );
     expect(offMessage).toBeFalsy();
 

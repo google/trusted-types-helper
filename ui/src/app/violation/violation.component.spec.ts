@@ -135,7 +135,7 @@ describe('ViolationComponent', () => {
       'HTML',
       'someData',
       'Stack trace:',
-      'internalFunction4\n',
+      'internalFunction4',
       'Document URL: https://example.com',
       // 'No source file available.', // TODO: Put this back in the UI.
     ].forEach((s) => expect(messages).toContain(s));
