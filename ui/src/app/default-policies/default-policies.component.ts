@@ -1,27 +1,38 @@
 import {
-  ChangeDetectionStrategy,
   Component,
   Input,
-  OnInit,
+  OnChanges,
+  SimpleChanges,
+  computed,
   signal,
 } from '@angular/core';
-import { ViolationComponent } from '../violation/violation.component';
 import { Highlight } from 'ngx-highlightjs';
-import { NgClass, NgFor, NgIf } from '@angular/common';
-import { MatButtonModule } from '@angular/material/button';
+import { NgIf } from '@angular/common';
+import {
+  MatButtonToggle,
+  MatButtonToggleGroup,
+} from '@angular/material/button-toggle';
 import { MatCardModule } from '@angular/material/card';
+import { MatDividerModule } from '@angular/material/divider';
 import { DefaultPolicyData } from '../../../../common/default-policies';
-import { MatBadgeModule } from '@angular/material/badge';
-import { MatExpansionModule } from '@angular/material/expansion';
+import { MatLabel } from '@angular/material/form-field';
 
 @Component({
   selector: 'app-default-policy',
   standalone: true,
-  imports: [Highlight, NgIf, MatCardModule],
+  imports: [
+    Highlight,
+    NgIf,
+    MatCardModule,
+    MatButtonToggle,
+    MatButtonToggleGroup,
+    MatLabel,
+    MatDividerModule,
+  ],
   templateUrl: './default-policies.html',
   styleUrl: './default-policies.css',
 })
-export class DefaultPolicyComponent implements OnInit {
+export class DefaultPolicyComponent implements OnChanges {
   @Input()
   defaultPolicies: DefaultPolicyData = {
     HTML: {
@@ -33,19 +44,40 @@ export class DefaultPolicyComponent implements OnInit {
     Script: [],
     URL: [],
   };
-
-  code: string = ''; // result to display in string
+  selectedTabSize = signal('2');
+  code = signal('');
+  formattedCode = computed(() => {
+    const selectedTabSizeValue = this.selectedTabSize();
+    const codeValue = this.code();
+    if (selectedTabSizeValue === 'tab') {
+      return codeValue;
+    }
+    const tabSize = parseInt(this.selectedTabSize(), 10);
+    const spaces = ' '.repeat(tabSize);
+    return codeValue.replace(/\t/g, spaces);
+  });
 
   // build a string to look like an array: '[a, b, c]'
   buildAllowlist(allowlist: Array<String | undefined>): String {
     if (allowlist) {
-      const list = allowlist.map((item) => `'${item}'`).join(', ');
+      const list = allowlist
+        .filter((item) => item !== undefined)
+        .map((item) => `'${item}'`)
+        .join(', ');
       return `${list}`;
     }
     return '';
   }
 
-  ngOnInit() {
+  constructor() {
+    this.generateDefaultPolicy();
+  }
+
+  ngOnChanges(_changes: SimpleChanges) {
+    this.generateDefaultPolicy();
+  }
+
+  private generateDefaultPolicy() {
     console.log('default policy page is loaded!');
     if (this.defaultPolicies) {
       console.log(
@@ -73,39 +105,35 @@ export class DefaultPolicyComponent implements OnInit {
         allowlist = '';
       }
 
-      var temp = [];
-      temp.push(
-        // dompurify
-        `\n`, // to fix intentation
+      const temp = [
+        // TODO: a statement to import dompurify if needed.
         `const urlAllowlist = [${this.buildAllowlist(this.defaultPolicies.URL)}];`,
         `const scriptAllowlist = [${this.buildAllowlist(this.defaultPolicies.Script)}];`,
         `const htmlAllowlist = [${allowlist}];`,
         `window.trustedTypes.createPolicy(\'default\', {`,
-        `        createScriptURL: (input) => {`,
-        `                if (urlAllowlist.some(allowlist => input.startsWith(allowlist))) {`,
-        `                        return input;`,
-        `                } else {`,
-        `                        return null;`,
-        `                }`,
-        `        },\n`,
-        `        createScript: (input) => {`,
-        `                if (scriptAllowlist.includes(input)) {`,
-        `                        return input;`,
-        `                } else {`,
-        `                        return null;`,
-        `                }`,
-        `        },\n`,
-        `        createHTML: (input) => {`,
-        `               if (htmlAllowlist.includes(input)) {`,
-        `                         return input;`,
-        `               else {`,
-        `                         return DOMPurify.sanitize(input, {ADD_TAGS: [${tags}], ADD_ATTR: [${attr}]);`,
-        `               }`,
-        `        },\n});`,
-      );
-      this.code = temp.join('\n');
+        `\tcreateScriptURL: (input) => {`,
+        `\t\tif (urlAllowlist.some(allowlist => input.startsWith(allowlist))) {`,
+        `\t\t\treturn input;`,
+        `\t\t} else {`,
+        `\t\t\treturn null;`,
+        `\t\t}`,
+        `\t},\n`,
+        `\tcreateScript: (input) => {`,
+        `\t\tif (scriptAllowlist.includes(input)) {`,
+        `\t\t\treturn input;`,
+        `\t\t} else {`,
+        `\t\t\treturn null;`,
+        `\t\t}`,
+        `\t},\n`,
+        `\tcreateHTML: (input) => {`,
+        `\t\tif (htmlAllowlist.includes(input)) {`,
+        `\t\t\treturn input;`,
+        `\t\t} else {`,
+        `\t\t\treturn DOMPurify.sanitize(input, {ADD_TAGS: [${tags}], ADD_ATTR: [${attr}]});`,
+        `\t\t}`,
+        `\t},\n});`,
+      ];
+      this.code.set(temp.join('\n'));
     }
   }
-
-  ngOnChanges() {}
 }
