@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { Component, Input, OnInit } from '@angular/core';
+import { Component, computed, effect, input } from '@angular/core';
 import { DefaultPolicyWarning } from '../../../../common/common';
 import { NgClass } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
@@ -27,29 +27,18 @@ import { MatSnackBar } from '@angular/material/snack-bar';
   templateUrl: './warning.component.html',
   styleUrl: './warning.component.css',
 })
-export class WarningComponent implements OnInit {
+export class WarningComponent {
   constructor(private snackBar: MatSnackBar) {}
 
-  @Input()
-  defaultPolicyWarning: DefaultPolicyWarning | undefined;
-  isSuccess = false;
-  message = 'No message yet.';
+  defaultPolicyWarning = input<DefaultPolicyWarning | undefined>(undefined);
+  isSuccess = computed(() => this.defaultPolicyWarning()?.isSuccess || false);
+  message = computed(
+    () => this.defaultPolicyWarning()?.message || 'No message yet.',
+  );
 
-  generateDefaultPolicyWarning() {
-    if (this.defaultPolicyWarning) {
-      this.message = this.defaultPolicyWarning.message;
-      this.isSuccess = this.defaultPolicyWarning.isSuccess;
-
-      this.snackBar.open(this.message, 'Close');
-    }
-  }
-
-  ngOnInit() {
-    console.log('OnInit');
-    this.generateDefaultPolicyWarning();
-  }
-
-  ngOnChanges() {
-    this.generateDefaultPolicyWarning();
-  }
+  // Make sure that the snackbar pops open whenever the DefaultPolicyWarning
+  // is updated.
+  displayDefaultPolicyWarningMessage = effect(() => {
+    this.snackBar.open(this.message(), 'Close');
+  });
 }
