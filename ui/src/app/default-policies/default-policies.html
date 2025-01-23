@@ -1,10 +1,18 @@
 <mat-card class="policy-card">
   <mat-card-header>
     <mat-card-title>TT Default Policies:</mat-card-title>
+    <div class="tab-size-toggle">
+      <mat-button-toggle-group [(value)]="selectedTabSize">
+        <mat-button-toggle value="2">Tab size: 2</mat-button-toggle>
+        <mat-button-toggle value="4">Tab size: 4</mat-button-toggle>
+        <mat-button-toggle value="tab">Tab</mat-button-toggle>
+      </mat-button-toggle-group>
+    </div>
   </mat-card-header>
   <mat-card-content>
+    <mat-divider></mat-divider>
     <pre>
-      <code [highlight]="code" language="typescript"></code>
+      <code [highlight]="formattedCode()" language="typescript"></code>
     </pre>
   </mat-card-content>
 </mat-card>
