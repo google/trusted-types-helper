@@ -15,12 +15,21 @@
  */
 
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { WarningComponent } from './warning.component';
+import { DefaultPolicyWarning } from '../../../../common/common';
 
 describe('WarningComponent', () => {
   let component: WarningComponent;
   let fixture: ComponentFixture<WarningComponent>;
+  let snackBar: MatSnackBar;
+  const warning = (message: string) => {
+    return {
+      message: message,
+      isSuccess: true,
+      date: Date.now(),
+    } as DefaultPolicyWarning;
+  };
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
@@ -29,10 +38,37 @@ describe('WarningComponent', () => {
 
     fixture = TestBed.createComponent(WarningComponent);
     component = fixture.componentInstance;
+    // This is the same instance injected into the component constructor
+    snackBar = TestBed.inject(MatSnackBar);
     fixture.detectChanges();
   });
 
   it('should create', () => {
     expect(component).toBeTruthy();
+  });
+
+  it('should show the correct message when defaultPolicyWarning is set', () => {
+    const message = 'This is a warning message.';
+    fixture.componentRef.setInput('defaultPolicyWarning', warning(message));
+    fixture.detectChanges();
+
+    expect(component.message()).toBe(message);
+  });
+
+  it('should show "No message yet." when defaultPolicyWarning is undefined', () => {
+    fixture.componentRef.setInput('defaultPolicyWarning', undefined);
+    fixture.detectChanges();
+
+    expect(component.message()).toBe('No message yet.');
+  });
+
+  it('should display the snackbar when defaultPolicyWarning is updated', () => {
+    spyOn(snackBar, 'open');
+
+    const message = 'This is a warning message.';
+    fixture.componentRef.setInput('defaultPolicyWarning', warning(message));
+    fixture.detectChanges();
+
+    expect(snackBar.open).toHaveBeenCalledWith(message, 'Close');
   });
 });

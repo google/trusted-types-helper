@@ -15,7 +15,6 @@
  */
 
 /// <reference types="chrome"/>
-// import {chrome} from '@types/chrome';
 import { Component, signal } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import {
@@ -87,10 +86,6 @@ export class AppComponent {
   violationsByClusters$: Observable<TrustedTypesViolationCluster[]>;
   defaultPolicyData$: Observable<DefaultPolicyData>;
 
-  showFirstViolationOnly = true;
-  expandOrHideViolationsMessage = 'Expand violations';
-  message = 'No message yet.';
-  isSuccess = false;
   violationsByTypes: ViolationsByTypes = {
     HTML: [],
     Script: [],
@@ -167,15 +162,6 @@ export class AppComponent {
 
   private refreshDataByDefaultPolicies() {
     this.violationDataService.refreshDataByDefaultPolicies();
-  }
-
-  toggleViolationVisibility() {
-    this.showFirstViolationOnly = !this.showFirstViolationOnly;
-    if (this.showFirstViolationOnly == true) {
-      this.expandOrHideViolationsMessage = 'Expand violations';
-    } else {
-      this.expandOrHideViolationsMessage = 'Hide violations';
-    }
   }
 
   /**
