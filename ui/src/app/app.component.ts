@@ -15,7 +15,7 @@
  */
 
 /// <reference types="chrome"/>
-import { Component, signal } from '@angular/core';
+import { Component, WritableSignal, inject, signal } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import {
   DefaultPolicyWarning,
@@ -33,6 +33,8 @@ import { Observable, interval } from 'rxjs';
 import { switchMap } from 'rxjs/operators';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
+import { MatMenuModule } from '@angular/material/menu';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatInputModule } from '@angular/material/input';
@@ -41,6 +43,8 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { TrustedTypesViolationCluster } from '../../../common/common';
 import { TimeAgoPipe } from './shared/pipes/time-ago.pipe';
 import { ViolationDataService } from './shared/services/violation-data.service';
+import { MatSnackBar } from '@angular/material/snack-bar';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 
 /**
  * Tuple for how recently we polled for extension on/off status.
@@ -71,6 +75,8 @@ interface OnOffSwitchState {
     MatButtonModule,
     MatCardModule,
     TimeAgoPipe,
+    MatIconModule,
+    MatMenuModule,
   ],
   templateUrl: './app.component.html',
   styleUrl: './app.component.css',
@@ -80,6 +86,7 @@ export class AppComponent {
   onOffSwitchState$: Observable<OnOffSwitchState>;
   onOffToggleDisabled = false;
   onOffToggleButtonText = 'Turn On';
+  extensionOn: WritableSignal<boolean>;
 
   // Data sources from service_worker.ts
   violationsByTypes$: Observable<ViolationsByTypes>;
@@ -105,6 +112,9 @@ export class AppComponent {
   defaultPolicyWarning$ = signal<DefaultPolicyWarning | undefined>(undefined);
   selectedViewMode: 'byClusters' | 'byTypes' | 'defaultPolicies' = 'byClusters'; // Default viewing mode
 
+  private _snackBar = inject(MatSnackBar);
+  private _dialog = inject(MatDialog);
+
   constructor(private violationDataService: ViolationDataService) {
     // Set the data sources from our service_worker.ts
     this.violationsByTypes$ = this.violationDataService.violationDataByType$;
@@ -126,6 +136,8 @@ export class AppComponent {
                 state: response.onOffState,
                 timestamp: new Date(),
               };
+              // Manual interop to Angular Signals.
+              this.extensionOn.set(response.onOffState);
               observer.next(res);
             }
             observer.complete();
@@ -133,6 +145,9 @@ export class AppComponent {
         });
       }),
     );
+    // Convenience accessor.
+    // TODO: Move the template to use the signal version as well.
+    this.extensionOn = signal(true);
 
     // Call once during construction to see whether there is a status on
     // the default policy creation.
@@ -167,15 +182,34 @@ export class AppComponent {
   /**
    * Send a message to the service worker that we are flipping the ON/OFF
    *
-   * TODO: Move to own "Extension OFF component"
+   * TODO: Move to own "Extension OFF component" (This might fix the bug with
+   * the button being forever disabled.)
    */
   toggleExtensionOnOff() {
+    this.sendToggleOnOffSwitchMessage();
+    this.onOffToggleDisabled = true;
+    this.onOffToggleButtonText = 'Loading...';
+  }
+
+  /**
+   * Just send the on/off message without changing view state of the warning.
+   */
+  sendToggleOnOffSwitchMessage() {
+    const currentlyOnBeforeToggle = this.extensionOn();
     const msg: Message = {
       type: 'toggleOnOffSwitch',
     };
     chrome.runtime.sendMessage(msg);
-    this.onOffToggleDisabled = true;
-    this.onOffToggleButtonText = 'Loading...';
+    // While we wait for updates from the observable.
+    this.extensionOn.set(!currentlyOnBeforeToggle);
+    // Be responsible and let the user know.
+    if (currentlyOnBeforeToggle) {
+      alert(
+        'Since you turned off the extension after the default policy was ' +
+          'created, you might have to refresh the page for the extension is ' +
+          'truly turned off for this tab.',
+      );
+    }
   }
 
   onViewGroupChange() {
@@ -193,4 +227,55 @@ export class AppComponent {
         break;
     }
   }
+
+  clearViolationsForTab() {
+    let dialogRef = this._dialog.open(AreYouSureDialog);
+    dialogRef.afterClosed().subscribe((areTheySure) => {
+      if (!areTheySure) {
+        return;
+      }
+      chrome.runtime.sendMessage(
+        {
+          type: 'clearViolationsInTab',
+          inspectedTabId: chrome.devtools.inspectedWindow.tabId,
+        } as Message,
+        (response) => {
+          // Will respond with `true` if the chrome.storage.local.set succeded.
+          if (response === true) {
+            this._snackBar.open('Violations cleared!', 'Close', {
+              duration: 5000,
+            });
+            // Kick off state refresh.
+            this.refreshDataByType();
+            this.refreshDataByCluster();
+            this.refreshDataByDefaultPolicies();
+          } else {
+            this._snackBar.open(
+              `Error clearing tab violation history: ${JSON.stringify(response)}`,
+              'Close',
+              { duration: 5000 },
+            );
+          }
+        },
+      );
+    });
+  }
 }
+
+/**
+ * Just a simple dialog component for an "Are you sure?" box before clearing
+ * history.
+ */
+@Component({
+  selector: 'are-you-sure-dialog',
+  template: `<h2 mat-dialog-title>Are you sure?</h2>
+    <mat-dialog-actions align="end">
+      <button mat-button mat-dialog-close>Cancel</button>
+      <button mat-button [mat-dialog-close]="true" cdkFocusInitial>
+        Clear
+      </button>
+    </mat-dialog-actions>`,
+  imports: [MatDialogModule, MatButtonModule],
+  standalone: true,
+})
+export class AreYouSureDialog {}

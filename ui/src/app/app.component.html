@@ -41,18 +41,52 @@
 
     <app-warning [defaultPolicyWarning]="defaultPolicyWarning$()"></app-warning>
 
-    <mat-button-toggle-group
-      [(ngModel)]="selectedViewMode"
-      aria-label="View Mode"
-      (change)="onViewGroupChange()"
-      class="button"
-    >
-      <mat-button-toggle value="byClusters">By Clusters</mat-button-toggle>
-      <mat-button-toggle value="byTypes">By Types</mat-button-toggle>
-      <mat-button-toggle value="defaultPolicies"
-        >Generate Default Policies</mat-button-toggle
+    <div class="buttons-row">
+      <mat-button-toggle-group
+        [(ngModel)]="selectedViewMode"
+        aria-label="View Mode"
+        (change)="onViewGroupChange()"
+        class="button"
       >
-    </mat-button-toggle-group>
+        <mat-button-toggle value="byClusters">By Clusters</mat-button-toggle>
+        <mat-button-toggle value="byTypes">By Types</mat-button-toggle>
+        <mat-button-toggle value="defaultPolicies"
+          >Generate Default Policies</mat-button-toggle
+        >
+      </mat-button-toggle-group>
+
+      <button
+        class="open-menu-button"
+        [matMenuTriggerFor]="menu"
+        mat-icon-button
+        aria-label="Menu for extra history options"
+      >
+        <mat-icon>more_vert</mat-icon>
+      </button>
+
+      <mat-menu #menu="matMenu">
+        @if (!extensionOn()) {
+          <button mat-menu-item (click)="sendToggleOnOffSwitchMessage()">
+            <mat-icon>power_settings_new</mat-icon>
+            <span>Turn extension ON</span>
+          </button>
+        } @else {
+          <button mat-menu-item (click)="sendToggleOnOffSwitchMessage()">
+            <mat-icon>power_off</mat-icon>
+            <span>Turn extension OFF</span>
+          </button>
+        }
+        <button mat-menu-item (click)="clearViolationsForTab()">
+          <mat-icon>clear_all</mat-icon>
+          <span>Clear violations for this tab</span>
+        </button>
+        <button mat-menu-item disabled>
+          <mat-icon>save</mat-icon>
+          <!-- TODO: Implement this! -->
+          <span>Download violations for this tab</span>
+        </button>
+      </mat-menu>
+    </div>
 
     @switch (selectedViewMode) {
       @case ("byClusters") {

@@ -172,3 +172,50 @@ test(
   },
   TEST_TIMEOUT,
 );
+
+test(
+  "Extension Menu Interaction to clear violations",
+  async () => {
+    await page?.goto(DEV_SERVER, PUPPETEER_NAVIGATION_OPTS);
+
+    if (!browser || !extensionId) {
+      fail("Did not initialize the browser and the extension properly.");
+    }
+    const panel = await openDevToolsPanel(browser, extensionId, (x) => fail(x));
+
+    // Wait for Angular to render (adjust timeout as needed)
+    await new Promise((resolve) => setTimeout(resolve, 1000)); // Give Angular time to render
+
+    // 1. Click the menu button
+    const menuButton = await panel.$(".open-menu-button");
+    expect(menuButton).toBeTruthy();
+    await menuButton?.click();
+
+    // Wait for the menu to open (important!) - This is the most likely point of failure if the test is flaky
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+
+    // 2. Click the "Clear violations" menu item
+    const clearButton = await panel.$("button[mat-menu-item]:nth-child(2)");
+    expect(clearButton).toBeTruthy();
+    await clearButton?.click();
+
+    // 3. Handle the dialog (you'll need to interact with the dialog if it appears)
+    // If the dialog is a custom Angular Material Dialog, you'll need to find its elements and interact.
+    // Example (adapt to your dialog's structure):
+    const dialogTitle = await panel.waitForSelector("h2[mat-dialog-title]"); // Wait for the dialog title to appear
+    expect(dialogTitle).toBeTruthy(); // Verify that the dialog opens
+    const clearInDialogButton = await panel.$("button[cdkFocusInitial]"); // The "Clear" button in your dialog
+    expect(clearInDialogButton).toBeTruthy();
+    await clearInDialogButton?.click();
+
+    // You might need to wait for a snackbar or other UI feedback
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+
+    // 4. Assertions (e.g., check for snackbar message, changes in UI, etc.)
+    const snackBar = await panel.$("simple-snack-bar");
+    expect(snackBar).toBeTruthy();
+    const snackBarText = await snackBar?.evaluate((el) => el.textContent);
+    expect(snackBarText).toContain("Violations cleared!");
+  },
+  TEST_TIMEOUT,
+);
