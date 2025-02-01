@@ -224,6 +224,11 @@ export interface GetOnOffSwitchStateCommand {
   type: "getOnOffSwitchState";
 }
 
+export interface ClearViolationsInTab {
+  type: "clearViolationsInTab";
+  inspectedTabId: number;
+}
+
 /**
  * Each message has a specific structure based on its type. These structures
  * are used to represent different types of events, commands, or data transfers.
@@ -239,7 +244,8 @@ export type Message =
   | GetSanitizedInputCommand
   | SendSanitizedInputCommand
   | ToggleOnOffSwitchCommand
-  | GetOnOffSwitchStateCommand;
+  | GetOnOffSwitchStateCommand
+  | ClearViolationsInTab;
 
 // TODO: Change this if the type above is updated.
 export function isMessage(message: any): message is Message {
@@ -254,6 +260,7 @@ export function isMessage(message: any): message is Message {
     case "listViolationsByCluster":
     case "listViolationsByType":
     case "defaultPolicies":
+    case "clearViolationsInTab":
       return "inspectedTabId" in message;
     case "defaultPolicyWarning":
       return "defaultPolicyWarning" in message;

@@ -34,3 +34,13 @@
 .card-container {
   padding: 20px; /* Add padding around the card */
 }
+
+.buttons-row {
+  display: flex;
+  justify-content: space-between; /* Key for left/right alignment */
+  align-items: center; /* Vertically center items */
+}
+
+.open-menu-button {
+  margin: 10px;
+}

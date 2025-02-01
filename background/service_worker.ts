@@ -136,6 +136,15 @@ chrome.runtime.onMessage.addListener((msg: Message, sender, sendResponse) => {
     case "getOnOffSwitchState":
       sendResponse({ onOffState: onOffState });
       return false;
+    case "clearViolationsInTab":
+      if (msg.inspectedTabId) {
+        const activeTabId = msg.inspectedTabId;
+        chrome.storage.local.set({ [activeTabId]: [] }, () =>
+          sendResponse(true),
+        );
+        return true; // Wait for callback inside chrome.storage.local.set
+      }
+      return false;
   }
   // Send back empty message and return false to indicate we are done in case
   // anyone is listening (because listen.js is always listening now).
