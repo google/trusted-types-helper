@@ -181,11 +181,32 @@ test(
     if (!browser || !extensionId) {
       fail("Did not initialize the browser and the extension properly.");
     }
+    // Try a hard refresh because when you load an extension for the first time
+    // it doesn't set the Trusted Types headers properly sometimes.
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+    await page?.reload(PUPPETEER_NAVIGATION_OPTS);
+
+    // Try generating a violation to see whether it shows up in the UI.
+    await page?.evaluate(() => {
+      const n = document.createElement("div");
+      n.innerHTML = "<h1>DOM INJECTION</h1>";
+      document.body.appendChild(n);
+    });
+
     const panel = await openDevToolsPanel(browser, extensionId, (x) => fail(x));
 
     // Wait for Angular to render (adjust timeout as needed)
-    await new Promise((resolve) => setTimeout(resolve, 1000)); // Give Angular time to render
+    // (5 seconds is long enough for the default policy instantiated check
+    // defined in the content.ts content script.)
+    await new Promise((resolve) => setTimeout(resolve, 5000));
 
+    // Check if the created violation exists
+    const violation = await panel.$(".cluster-card");
+    expect(violation).toBeTruthy();
+    const violationData = await violation?.evaluate((el) => el.innerHTML);
+    expect(violationData).toContain("DOM INJECTION");
+
+    // Clearing the violations
     // 1. Click the menu button
     const menuButton = await panel.$(".open-menu-button");
     expect(menuButton).toBeTruthy();
@@ -216,6 +237,8 @@ test(
     expect(snackBar).toBeTruthy();
     const snackBarText = await snackBar?.evaluate((el) => el.textContent);
     expect(snackBarText).toContain("Violations cleared!");
+    const violationCard = await panel.$(".cluster-card");
+    expect(violationCard).not.toBeTruthy();
   },
   TEST_TIMEOUT,
 );
