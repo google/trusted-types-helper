@@ -16,14 +16,12 @@
 
 import { Component, computed, effect, input } from '@angular/core';
 import { DefaultPolicyWarning } from '../../../../common/common';
-import { NgClass } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatSnackBar } from '@angular/material/snack-bar';
 
 @Component({
   selector: 'app-warning',
-  standalone: true,
-  imports: [NgClass, MatCardModule],
+  imports: [MatCardModule],
   templateUrl: './warning.component.html',
   styleUrl: './warning.component.css',
 })

@@ -126,6 +126,8 @@ describe('DefaultPolicyComponent', () => {
     fixture.detectChanges();
     await fixture.whenStable();
     expect(component.selectedTabSize()).toBe('2');
+    fixture.detectChanges(); // Wait more for stability post Angular 19 update.
+    await fixture.whenStable();
     const codeElement = fixture.debugElement.query(By.css('pre'));
     expect(codeElement.nativeElement.textContent).toContain(
       '  createScriptURL: (input) => {',
@@ -183,6 +185,8 @@ describe('DefaultPolicyComponent', () => {
 
     // Allowlist nothing.
     const codeElement = fixture.debugElement.query(By.css('pre'));
+    fixture.detectChanges(); // Wait more for stability post Angular 19 update.
+    await fixture.whenStable();
     expect(codeElement.nativeElement.textContent).toContain(
       'const urlAllowlist = [];',
     );

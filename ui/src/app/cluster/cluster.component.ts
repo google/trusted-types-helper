@@ -22,7 +22,6 @@ import {
   signal,
 } from '@angular/core';
 import { ViolationComponent } from '../violation/violation.component';
-import { NgClass, NgFor, NgIf } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { TrustedTypesViolationCluster } from '../../../../common/common';
@@ -31,13 +30,9 @@ import { MatExpansionModule } from '@angular/material/expansion';
 
 @Component({
   selector: 'app-cluster',
-  standalone: true,
   imports: [
-    NgClass,
-    NgIf,
     MatCardModule,
     MatButtonModule,
-    NgFor,
     ViolationComponent,
     MatBadgeModule,
     MatExpansionModule,

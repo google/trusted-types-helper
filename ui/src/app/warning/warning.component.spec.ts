@@ -18,6 +18,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { WarningComponent } from './warning.component';
 import { DefaultPolicyWarning } from '../../../../common/common';
+import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 
 describe('WarningComponent', () => {
   let component: WarningComponent;
@@ -33,7 +34,7 @@ describe('WarningComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [WarningComponent],
+      imports: [WarningComponent, NoopAnimationsModule],
     }).compileComponents();
 
     fixture = TestBed.createComponent(WarningComponent);

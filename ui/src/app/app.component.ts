@@ -22,9 +22,8 @@ import {
   ViolationsByTypes,
 } from '../../../common/common';
 import { DefaultPolicyData } from '../../../common/default-policies';
-import { NgClass, NgFor, CommonModule } from '@angular/common';
+import { CommonModule } from '@angular/common';
 import { TypeGroupComponent } from './type-group/type-group.component';
-import { ViolationComponent } from './violation/violation.component';
 import { WarningComponent } from './warning/warning.component';
 import { ClusterComponent } from './cluster/cluster.component';
 import { DefaultPolicyComponent } from './default-policies/default-policies.component';
@@ -55,12 +54,8 @@ interface OnOffSwitchState {
 
 @Component({
   selector: 'app-root',
-  standalone: true,
   imports: [
-    NgClass,
-    NgFor,
     TypeGroupComponent,
-    ViolationComponent,
     WarningComponent,
     ClusterComponent,
     DefaultPolicyComponent,
@@ -278,7 +273,6 @@ export class AppComponent {
       </button>
     </mat-dialog-actions>`,
   imports: [MatDialogModule, MatButtonModule],
-  standalone: true,
 })
 export class AreYouSureDialog {}
 
