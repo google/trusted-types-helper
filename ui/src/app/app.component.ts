@@ -16,7 +16,6 @@
 
 /// <reference types="chrome"/>
 import { Component, WritableSignal, inject, signal } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
 import {
   DefaultPolicyWarning,
   Message,
@@ -58,7 +57,6 @@ interface OnOffSwitchState {
   selector: 'app-root',
   standalone: true,
   imports: [
-    RouterOutlet,
     NgClass,
     NgFor,
     TypeGroupComponent,
