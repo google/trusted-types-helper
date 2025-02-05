@@ -29,7 +29,7 @@ import { WarningComponent } from './warning/warning.component';
 import { ClusterComponent } from './cluster/cluster.component';
 import { DefaultPolicyComponent } from './default-policies/default-policies.component';
 import { Observable, interval } from 'rxjs';
-import { switchMap } from 'rxjs/operators';
+import { filter, switchMap } from 'rxjs/operators';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -115,11 +115,15 @@ export class AppComponent {
 
   constructor(private violationDataService: ViolationDataService) {
     // Set the data sources from our service_worker.ts
-    this.violationsByTypes$ = this.violationDataService.violationDataByType$;
-    this.violationsByClusters$ =
-      this.violationDataService.violationDataByCluster$;
-    this.defaultPolicyData$ =
-      this.violationDataService.violationDataByDefaultPolicies$;
+    this.violationsByTypes$ = alertUserIfObservableIsPassingOnUndefined(
+      this.violationDataService.violationDataByType$,
+    );
+    this.violationsByClusters$ = alertUserIfObservableIsPassingOnUndefined(
+      this.violationDataService.violationDataByCluster$,
+    );
+    this.defaultPolicyData$ = alertUserIfObservableIsPassingOnUndefined(
+      this.violationDataService.violationDataByDefaultPolicies$,
+    );
 
     // Call every ten seconds to poll for extension on/off status.
     this.onOffSwitchState$ = interval(10_000).pipe(
@@ -277,3 +281,27 @@ export class AppComponent {
   standalone: true,
 })
 export class AreYouSureDialog {}
+
+/**
+ * Show an alert to the user if the Chrome extension communication API has
+ * broken down. Probably hacky but this is the best way to reset the Chrome API
+ * state.
+ *
+ * @param stream
+ * @returns
+ */
+function alertUserIfObservableIsPassingOnUndefined<T>(
+  stream: Observable<T | undefined>,
+): Observable<T> {
+  return stream.pipe(
+    filter((x) => {
+      if (x === undefined) {
+        alert(
+          'Chrome extension did not initialize properly. Please refresh the page.',
+        );
+        return false;
+      }
+      return true;
+    }),
+  ) as Observable<T>;
+}

@@ -41,29 +41,33 @@ export class ViolationDataService {
   // We are exposing Observables in the API of this service, but we need to
   // back them up with ReplaySubject so that they will be "hot"-- as in, these
   // will keep running in the background regardless of subscriptions.
-  private violationDataByTypeSubject$ = new ReplaySubject<ViolationDataType>(1);
-  private violationDataByClusterSubject$ = new ReplaySubject<
-    TrustedTypesViolationCluster[]
+  private violationDataByTypeSubject$ = new ReplaySubject<
+    ViolationDataType | undefined
   >(1);
-  private violationDataByDefaultPoliciesSubject$ =
-    new ReplaySubject<DefaultPolicyData>(1);
+  private violationDataByClusterSubject$ = new ReplaySubject<
+    TrustedTypesViolationCluster[] | undefined
+  >(1);
+  private violationDataByDefaultPoliciesSubject$ = new ReplaySubject<
+    DefaultPolicyData | undefined
+  >(1);
 
   /**
    * An Observable that emits violation data by type.
    */
-  violationDataByType$: Observable<ViolationDataType> =
+  violationDataByType$: Observable<ViolationDataType | undefined> =
     this.violationDataByTypeSubject$.asObservable();
 
   /**
    * An Observable that emits violation data by cluster.
    */
-  violationDataByCluster$: Observable<TrustedTypesViolationCluster[]> =
-    this.violationDataByClusterSubject$.asObservable();
+  violationDataByCluster$: Observable<
+    TrustedTypesViolationCluster[] | undefined
+  > = this.violationDataByClusterSubject$.asObservable();
 
   /**
    * An Observable that emits violation data by default policies.
    */
-  violationDataByDefaultPolicies$: Observable<DefaultPolicyData> =
+  violationDataByDefaultPolicies$: Observable<DefaultPolicyData | undefined> =
     this.violationDataByDefaultPoliciesSubject$.asObservable();
 
   constructor() {
@@ -153,14 +157,27 @@ export class ViolationDataService {
   private async getViolationDataFromLocalStorage(
     messageType: CompatibleMessageTypes,
   ): Promise<
-    ViolationDataType | TrustedTypesViolationCluster[] | DefaultPolicyData
+    | ViolationDataType
+    | TrustedTypesViolationCluster[]
+    | DefaultPolicyData
+    | undefined
   > {
     const message: Message = {
       type: messageType,
       inspectedTabId: chrome.devtools.inspectedWindow.tabId,
     };
-    const response = await chrome.runtime.sendMessage(message);
-    return response;
+    try {
+      const response = await chrome.runtime.sendMessage(message);
+      return response;
+    } catch (e) {
+      // TODO: Do not remove this, it should happen infrequently enough and
+      // we want to see what happened if this catch triggers.
+      debugger;
+      alert(
+        `Failed to communicate with service worker: ${e}.\nPlease refres the page.`,
+      );
+      return;
+    }
   }
 
   /**
@@ -168,10 +185,15 @@ export class ViolationDataService {
    * this is still up-to-date.
    * @returns
    */
-  private async listViolationsByTypeFromLocalStorage(): Promise<ViolationDataType> {
+  private async listViolationsByTypeFromLocalStorage(): Promise<
+    ViolationDataType | undefined
+  > {
     const res = await this.getViolationDataFromLocalStorage(
       'listViolationsByType',
     );
+    if (!res) {
+      return res;
+    }
     return res as ViolationDataType;
   }
 
@@ -181,11 +203,14 @@ export class ViolationDataService {
    * @returns
    */
   private async listViolationsByClusterFromLocalStorage(): Promise<
-    TrustedTypesViolationCluster[]
+    TrustedTypesViolationCluster[] | undefined
   > {
     const res = await this.getViolationDataFromLocalStorage(
       'listViolationsByCluster',
     );
+    if (!res) {
+      return res;
+    }
     return res as TrustedTypesViolationCluster[];
   }
 
@@ -194,8 +219,13 @@ export class ViolationDataService {
    * this is still up-to-date.
    * @returns
    */
-  private async defaultPoliciesFromLocalStorage(): Promise<DefaultPolicyData> {
+  private async defaultPoliciesFromLocalStorage(): Promise<
+    DefaultPolicyData | undefined
+  > {
     const res = await this.getViolationDataFromLocalStorage('defaultPolicies');
+    if (!res) {
+      return res;
+    }
     return res as DefaultPolicyData;
   }
 }
