@@ -119,6 +119,18 @@ addEventListener("error", (event) => {
   sendDefaultPolicyOverwriteErrorMessage(event.error);
 });
 
+// Global state to check whether the default policy has properly instantiated.
+declare global {
+  interface Window {
+    TT_HELPER_DID_DEFAULT_POLICY_RUN: boolean;
+    TT_HELPER_CHECK_IF_DEFAULT_POLICY_INITIALIZED: boolean;
+  }
+}
+window.TT_HELPER_DID_DEFAULT_POLICY_RUN = false;
+window.TT_HELPER_CHECK_IF_DEFAULT_POLICY_INITIALIZED = true;
+const TT_HELPER_MAGIC_INITIALIZATION_STRING =
+  "'VHJ1c3RlZCBUeXBlcyBIZWxwZXI= TT Helper trying an eval'";
+
 // Main logic for attempting to set a default policy to intercept Trusted Types
 // violations on the page.
 //
@@ -142,7 +154,10 @@ window.addEventListener("message", (event) => {
           },
 
           createScript: (string) => {
-            window.postMessage(createMessage(string, "Script"), "*");
+            window.TT_HELPER_DID_DEFAULT_POLICY_RUN = true;
+            if (string !== TT_HELPER_MAGIC_INITIALIZATION_STRING) {
+              window.postMessage(createMessage(string, "Script"), "*");
+            }
             return string;
           },
 
@@ -183,9 +198,11 @@ window.addEventListener("message", (event) => {
             ),
           };
           window.postMessage(msg, "*");
+          window.TT_HELPER_CHECK_IF_DEFAULT_POLICY_INITIALIZED = true;
         }
       }
     } else {
+      window.TT_HELPER_CHECK_IF_DEFAULT_POLICY_INITIALIZED = true;
       console.log(
         `Not adding TT to this page because global state was ${JSON.stringify(response)}`,
       );
@@ -199,3 +216,28 @@ window.addEventListener("message", (event) => {
 // a default policy to intercept Trusted Types violations.
 const onOffStateMsg: Message = { type: "getOnOffSwitchState" };
 window.postMessage(onOffStateMsg, "*");
+
+// Give the page a little bit of time to load and then see if our default policy
+// worked!
+//
+// We suspect that the first page load right after the extension is installed,
+// the headers do not set properly on the responses and the default policy code
+// does not get run, so we should warn users accordingly.
+setTimeout(() => {
+  // Check whether our default policy was initialized properly.
+  eval(TT_HELPER_MAGIC_INITIALIZATION_STRING);
+  if (
+    // If someone created a default policy (probably us, but not always)...
+    self.trustedTypes?.defaultPolicy &&
+    // And we didn't abort creating a default policy because there was an
+    // existing one...
+    window.TT_HELPER_CHECK_IF_DEFAULT_POLICY_INITIALIZED &&
+    // Then the setting of this global variable should have been called in
+    // createScript inside the default policy
+    !window.TT_HELPER_DID_DEFAULT_POLICY_RUN
+  ) {
+    alert(
+      "Default policy is not triggering on Trusted Types violations. Please refresh the page.",
+    );
+  }
+}, 5000);
