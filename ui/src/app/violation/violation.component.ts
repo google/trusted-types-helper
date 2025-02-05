@@ -25,22 +25,13 @@ import {
   Violation,
   ViolationType,
 } from '../../../../common/common';
-import { NgFor, NgClass, NgIf } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatExpansionModule } from '@angular/material/expansion';
 
 @Component({
   selector: 'app-violation',
-  standalone: true,
-  imports: [
-    NgFor,
-    NgClass,
-    NgIf,
-    MatCardModule,
-    MatChipsModule,
-    MatExpansionModule,
-  ],
+  imports: [MatCardModule, MatChipsModule, MatExpansionModule],
   templateUrl: './violation.component.html',
   styleUrl: './violation.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

@@ -7,7 +7,6 @@ import {
   signal,
 } from '@angular/core';
 import { Highlight } from 'ngx-highlightjs';
-import { NgIf } from '@angular/common';
 import {
   MatButtonToggle,
   MatButtonToggleGroup,
@@ -15,18 +14,14 @@ import {
 import { MatCardModule } from '@angular/material/card';
 import { MatDividerModule } from '@angular/material/divider';
 import { DefaultPolicyData } from '../../../../common/default-policies';
-import { MatLabel } from '@angular/material/form-field';
 
 @Component({
   selector: 'app-default-policy',
-  standalone: true,
   imports: [
     Highlight,
-    NgIf,
     MatCardModule,
     MatButtonToggle,
     MatButtonToggleGroup,
-    MatLabel,
     MatDividerModule,
   ],
   templateUrl: './default-policies.html',

@@ -14,55 +14,21 @@
  limitations under the License.
 -->
 
-<!-- Show everything -->
-<mat-card *ngIf="isFirstViolation == true" class="violation-card">
-  <div class="open-violation-card-header">
-    <mat-chip [style.background-color]="chipColor">{{
-      violation?.type
-    }}</mat-chip>
-    <div class="violation-payload hide-when-really-small">
-      {{ violation?.data?.substring(0, 30) }}
-    </div>
-    <div class="violation-time">{{ elapsedTime }}</div>
-  </div>
-  <div class="flex-card-content">
-    <div class="violation-data-container">
-      <span class="highlight">Script sample: </span>
-      <span class="code-block">{{ violation?.data }}</span>
-    </div>
-    <div class="violation-data-container hide-when-really-small">
-      <span class="highlight">Document URL: </span>
-      <span>{{ violation?.documentUrl }}</span>
-    </div>
-    <div class="violation-data-container-with-code violation-data-container">
-      <span class="highlight">Stack trace:</span>
-      <div class="code-block">
-        <ng-container *ngFor="let frame of stackTraceLines">
-          {{ frame }}
-        </ng-container>
+@if (isFirstViolation) {
+  <!-- Show everything -->
+  <mat-card class="violation-card">
+    <div class="open-violation-card-header">
+      <mat-chip [style.background-color]="chipColor">{{
+        violation?.type
+      }}</mat-chip>
+      <div class="violation-payload hide-when-really-small">
+        {{ violation?.data?.substring(0, 30) }}
       </div>
+      <div class="violation-time">{{ elapsedTime }}</div>
     </div>
-  </div>
-</mat-card>
-<!-- Show only header -->
-<mat-accordion *ngIf="isFirstViolation == false" class="violation-card">
-  <mat-expansion-panel hideToggle>
-    <mat-expansion-panel-header>
-      <div class="open-violation-card-header">
-        <mat-chip [style.background-color]="chipColor" class="violation-type">{{
-          violation?.type
-        }}</mat-chip>
-        <div class="violation-payload hide-when-really-small">
-          {{ violation?.data?.substring(0, 30) }}
-        </div>
-        <div class="violation-time">
-          {{ elapsedTime }}
-        </div>
-      </div>
-    </mat-expansion-panel-header>
     <div class="flex-card-content">
       <div class="violation-data-container">
-        <span class="highlight">Script sample:</span>
+        <span class="highlight">Script sample: </span>
         <span class="code-block">{{ violation?.data }}</span>
       </div>
       <div class="violation-data-container hide-when-really-small">
@@ -72,11 +38,52 @@
       <div class="violation-data-container-with-code violation-data-container">
         <span class="highlight">Stack trace:</span>
         <div class="code-block">
-          <span *ngFor="let frame of stackTraceLines">
-            {{ frame.trim() }}
-          </span>
+          @for (frame of stackTraceLines; track frame) {
+            {{ frame }}
+          }
         </div>
       </div>
     </div>
-  </mat-expansion-panel>
-</mat-accordion>
+  </mat-card>
+} @else {
+  <!-- Show only header -->
+  <mat-accordion class="violation-card">
+    <mat-expansion-panel hideToggle>
+      <mat-expansion-panel-header>
+        <div class="open-violation-card-header">
+          <mat-chip
+            [style.background-color]="chipColor"
+            class="violation-type"
+            >{{ violation?.type }}</mat-chip
+          >
+          <div class="violation-payload hide-when-really-small">
+            {{ violation?.data?.substring(0, 30) }}
+          </div>
+          <div class="violation-time">
+            {{ elapsedTime }}
+          </div>
+        </div>
+      </mat-expansion-panel-header>
+      <div class="flex-card-content">
+        <div class="violation-data-container">
+          <span class="highlight">Script sample:</span>
+          <span class="code-block">{{ violation?.data }}</span>
+        </div>
+        <div class="violation-data-container hide-when-really-small">
+          <span class="highlight">Document URL: </span>
+          <span>{{ violation?.documentUrl }}</span>
+        </div>
+        <div
+          class="violation-data-container-with-code violation-data-container"
+        >
+          <span class="highlight">Stack trace:</span>
+          <div class="code-block">
+            @for (frame of stackTraceLines; track frame) {
+              {{ frame.trim() }}
+            }
+          </div>
+        </div>
+      </div>
+    </mat-expansion-panel>
+  </mat-accordion>
+}
