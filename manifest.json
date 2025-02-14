@@ -3,6 +3,11 @@
   "name": "Trusted Types Helper",
   "description": "Identify and resolve Trusted Types violations easily!",
   "version": "1.0",
+  "icons": {
+    "16": "t16.png",
+    "48": "t48.png",
+    "128": "t128.png"
+  },
   "action": {
     "default_popup": "popup.html"
   },
