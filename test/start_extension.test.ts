@@ -42,7 +42,7 @@ beforeEach(async () => {
   // Launch the browser and wait for it to boot.
   browser = await puppeteer.launch({
     args: [
-      `--disable-extensions-except=${extension}`,
+      `--no-sandbox --disable-setuid-sandbox --disable-extensions-except=${extension}`,
       `--load-extension=${extension}`,
     ],
     devtools: true,
