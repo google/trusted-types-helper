@@ -14,6 +14,7 @@
     "build:prod": "npm run build:clean && npm run format && npm run build:tsc && npm run build:ui && npm run build:service_worker && npm run build:content_script && npm run build:popup_script",
     "format": "prettier . --write",
     "test:ng": "cd ui && ng test",
+    "test:ng:ci": "cd ui && ng test --watch=false",
     "test": "npm run build && jest test/",
     "test-page": "node test/test_server.js"
   },
