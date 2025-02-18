@@ -22,7 +22,7 @@ jobs:
         run: cd ui && npm install && cd ../ && npm install
 
       - name: Run integration tests
-        run: npm run test
+        run: export XAUTHORITY=$HOME/.Xauthority && npm run test
 
       - name: Run Angular tests
         run: npm run test:ng
