@@ -190,7 +190,7 @@ export class ViolationDataService {
       // we want to see what happened if this catch triggers.
       debugger;
       alert(
-        `Failed to communicate with service worker: ${e}.\nPlease refres the page.`,
+        `Failed to communicate with service worker: ${e}.\nPlease refresh the page.`,
       );
       return;
     }
