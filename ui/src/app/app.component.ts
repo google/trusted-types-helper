@@ -27,7 +27,7 @@ import { TypeGroupComponent } from './type-group/type-group.component';
 import { WarningComponent } from './warning/warning.component';
 import { ClusterComponent } from './cluster/cluster.component';
 import { DefaultPolicyComponent } from './default-policies/default-policies.component';
-import { Observable, interval } from 'rxjs';
+import { Observable, firstValueFrom, interval } from 'rxjs';
 import { filter, switchMap } from 'rxjs/operators';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -256,6 +256,22 @@ export class AppComponent {
         },
       );
     });
+  }
+
+  async downloadViolationsForTab() {
+    this.refreshDataByType();
+    const res = await firstValueFrom(this.violationsByTypes$);
+    const blob = new Blob([JSON.stringify(res, null, 2)], {
+      type: 'text/plain',
+    });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'violations.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
   }
 }
 
