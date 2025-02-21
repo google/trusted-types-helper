@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+import fs from "fs/promises";
 import path from "path";
 import puppeteer from "puppeteer";
 import { Browser, Page, GoToOptions } from "puppeteer";
@@ -176,7 +177,7 @@ test(
 );
 
 test(
-  "Extension Menu Interaction to clear violations",
+  "Extension Menu Interaction to create, download, and clear violations",
   async () => {
     await page?.goto(DEV_SERVER, PUPPETEER_NAVIGATION_OPTS);
 
@@ -208,13 +209,69 @@ test(
     const violationData = await violation?.evaluate((el) => el.innerHTML);
     expect(violationData).toContain("DOM INJECTION");
 
-    // Clearing the violations
+    // Download violations.
+    // 0. Get the CDP client and set download behavior
+    const hexString = Math.floor(Math.random() * 65536)
+      .toString(16)
+      .padStart(4, "0")
+      .toUpperCase();
+    const downloadPath = path.resolve(`/tmp/trusted-types-helper-${hexString}`);
+    const client = await page?.createCDPSession();
+    await client?.send("Page.setDownloadBehavior", {
+      behavior: "allow",
+      downloadPath: downloadPath,
+    });
+
     // 1. Click the menu button
     const menuButton = await panel.$(".open-menu-button");
     expect(menuButton).toBeTruthy();
     await menuButton?.click();
 
-    // Wait for the menu to open (important!) - This is the most likely point of failure if the test is flaky
+    // Wait for the menu to open (important!)
+    // This is the most likely point of failure if the test is flaky
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+
+    // 2. Click the "Download violations" menu item
+    const downloadButton = await panel.$("button[mat-menu-item]:nth-child(3)");
+    expect(downloadButton).toBeTruthy();
+    await downloadButton?.click();
+
+    // 3. Wait for the download to happen.
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+
+    // 4. Check that we did observe the payload.
+    const downloadedFilePath = path.resolve(
+      path.join(downloadPath, "violations.json"),
+    );
+    let successFs; // Check existence of our file and that it read
+    let data;
+    try {
+      await fs.access(downloadedFilePath);
+      data = await fs.readFile(downloadedFilePath, "utf-8");
+      successFs = true;
+    } catch (e) {
+      successFs = false;
+    }
+    expect(successFs).toBeTruthy();
+    expect(
+      () => JSON.parse(data), // Check that it serializes properly.
+    ).not.toThrow();
+    expect(data).toContain("<h1>DOM INJECTION</h1>");
+
+    // 5. Clean up downloaded files.
+    try {
+      await fs.rm(downloadPath, { recursive: true, force: true });
+      successFs = true;
+    } catch (e) {
+      successFs = false;
+    }
+    expect(successFs).toBeTruthy();
+
+    // Clearing the violations
+    // 1. Click the menu button
+    await menuButton?.click();
+
+    // Wait for the menu to open
     await new Promise((resolve) => setTimeout(resolve, 1000));
 
     // 2. Click the "Clear violations" menu item

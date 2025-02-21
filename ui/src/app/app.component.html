@@ -80,9 +80,8 @@
           <mat-icon>clear_all</mat-icon>
           <span>Clear violations for this tab</span>
         </button>
-        <button mat-menu-item disabled>
+        <button mat-menu-item (click)="downloadViolationsForTab()">
           <mat-icon>save</mat-icon>
-          <!-- TODO: Implement this! -->
           <span>Download violations for this tab</span>
         </button>
       </mat-menu>
